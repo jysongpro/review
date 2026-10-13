@@ -38,10 +38,12 @@
   --bad:var(--c-danger);
 }
 *{box-sizing:border-box;}
+html{font-size:10pt;}
 html,body{margin:0;padding:0;height:100%;}
 body{
   font-family:"Pretendard","Pretendard Variable",-apple-system,BlinkMacSystemFont,
     "Malgun Gothic","맑은 고딕","Apple SD Gothic Neo",sans-serif;
+  font-size:10pt;
   color:var(--c-text);
   background:var(--c-bg);
   -webkit-font-smoothing:antialiased;
