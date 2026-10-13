@@ -40,7 +40,7 @@
 *{box-sizing:border-box;}
 html,body{margin:0;padding:0;height:100%;}
 body{
-  font-family:"Pretendard","Pretendard Variable",-apple-system,BlinkMacSystemFont,
+  font-family:"Pretendard","Pretendard Variable","Noto Sans KR",-apple-system,BlinkMacSystemFont,
     "Malgun Gothic","맑은 고딕","Apple SD Gothic Neo",sans-serif;
   color:var(--c-text);
   background:var(--c-bg);
@@ -120,14 +120,16 @@ header.topbar .admin-btn:hover{background:rgba(255,255,255,.22);}
   padding:7px 16px;border-radius:999px;color:#d6f5ee;
 }
 .home-title{
-  margin:18px 0 10px;font-weight:800;letter-spacing:-1px;
-  font-size:clamp(26px,4vw,40px);line-height:1.22;
+  margin:18px 0 30px;font-weight:900;letter-spacing:-1.5px;
+  font-family:"Noto Sans KR","Pretendard",sans-serif;
+  font-size:clamp(38px,6vw,64px);line-height:1.28;
+  text-shadow:0 4px 28px rgba(0,0,0,.28);
 }
 .home-title .accent{
   background:linear-gradient(90deg,var(--c-cyan-400),#7ef0d8);
   -webkit-background-clip:text;background-clip:text;color:transparent;
 }
-.home-sub{font-size:15.5px;color:#c4d4ea;max-width:580px;margin:0 0 6px;}
+.home-sub{font-size:19px;color:#dce8f8;max-width:640px;margin:0 0 6px;font-weight:500;}
 
 .menu-cards{
   display:grid;grid-template-columns:1fr 1fr;gap:22px;
@@ -162,8 +164,8 @@ header.topbar .admin-btn:hover{background:rgba(255,255,255,.22);}
   background:linear-gradient(150deg,rgba(45,212,191,.28),rgba(43,127,208,.30));
   border:1px solid rgba(255,255,255,.22);
 }
-.menu-card h3{margin:0 0 6px;font-size:19px;font-weight:800;}
-.menu-card p{margin:0;font-size:13px;color:#cfe0f3;min-height:32px;}
+.menu-card h3{margin:0 0 8px;font-size:24px;font-weight:800;}
+.menu-card p{margin:0;font-size:15px;color:#cfe0f3;min-height:32px;}
 
 .home-footer{
   position:relative;z-index:2;

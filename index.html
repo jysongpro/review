@@ -7,6 +7,9 @@
 <meta name="description" content="한국폴리텍대학 2027학년도 학위·직업교육과정 교육운영계획서 검토위원 배정 및 검토결과 관리 시스템">
 <link rel="preconnect" href="https://cdn.jsdelivr.net">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/[email protected]/dist/web/static/pretendard.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/style.css">
 <script>window.APP_VERSION = "1.1.0";</script>
 </head>
@@ -34,10 +37,6 @@
   <div class="home-inner">
     <div class="home-hero">
       <h1 class="home-title">2027학년도 <span class="accent">학위·직업교육과정</span><br>교육운영계획서 검토 시스템</h1>
-      <p class="home-sub">
-        검토위원 배정, 운영계획서 PDF 공유, 과정별 검토항목 입력과 결과 집계까지
-        온라인으로 간편하게 진행합니다.
-      </p>
 
       <div class="menu-cards">
         <a class="menu-card" href="reviewer.html">
@@ -58,13 +57,13 @@
 
   <div class="home-footer">
     <div class="prog-info">
-      <b>한국폴리텍대학 교육운영계획서 검토 지원 도구</b><br>
-      개발버전 <b id="appVersion">1.1.0</b> · 개발 <b>학교법인 한국폴리텍대학 AI혁신부</b><br>
+      <b>학교법인 한국폴리텍대학 AI혁신부</b><br>
+      개발버전 <b id="appVersion">1.1.0</b><br>
       © 2026 학교법인 한국폴리텍대학. All rights reserved.
     </div>
   </div>
 </div>
 
-<script>document.getElementById('appVersion').textContent = window.APP_VERSION;</script>
+<script>document.getElementById('appVersion').textContent = window.APP_VERSION || "1.1.0";</script>
 </body>
 </html>
