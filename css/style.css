@@ -74,11 +74,13 @@ header.topbar .admin-btn:hover{background:rgba(255,255,255,.22);}
 .home{
   position:relative;overflow:hidden;min-height:100vh;
   display:flex;flex-direction:column;
-  background:
-    radial-gradient(1100px 600px at 80% -10%, rgba(45,212,191,.20), transparent 60%),
-    radial-gradient(900px 500px at 0% 110%, rgba(43,127,208,.22), transparent 55%),
-    linear-gradient(160deg, var(--c-navy-900), var(--c-navy-800) 55%, #123160);
   color:#fff;
+}
+.home::before{
+  content:"";position:absolute;inset:0;z-index:0;
+  background:
+    radial-gradient(1100px 600px at 80% -10%, rgba(45,212,191,.18), transparent 60%),
+    radial-gradient(900px 500px at 0% 110%, rgba(43,127,208,.20), transparent 55%);
 }
 .home-topbar{
   position:relative;z-index:2;
