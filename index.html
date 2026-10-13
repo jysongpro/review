@@ -3,38 +3,69 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>교육운영계획서 검토 지원도구</title>
+<title>한국폴리텍대학 교육운영계획서 검토 지원 도구</title>
+<meta name="description" content="한국폴리텍대학 학위과정·직업교육과정 교육운영계획서 검토위원 배정 및 검토결과 관리 도구">
+<link rel="preconnect" href="https://cdn.jsdelivr.net">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/[email protected]/dist/web/static/pretendard.css">
 <link rel="stylesheet" href="css/style.css">
 <script>window.APP_VERSION = "1.0.0";</script>
 </head>
 <body>
-<header class="topbar">
-  <h1>교육운영계획서 검토 지원도구</h1>
-  <button class="admin-btn" onclick="location.href='admin.html'">관리자</button>
-</header>
 
-<div class="container">
-  <div class="main-menu">
-    <a class="menu-card" href="result.html">
-      <div class="icon">📋</div>
-      <div class="label">검토결과조회</div>
-    </a>
-    <a class="menu-card" href="reviewer.html">
-      <div class="icon">✍️</div>
-      <div class="label">검토위원</div>
-    </a>
+<div class="home">
+  <div class="home-topbar">
+    <div class="brand">
+      <span class="logo-badge">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8"
+             stroke-linecap="round" stroke-linejoin="round">
+          <path d="M9 11l3 3L22 4"/>
+          <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
+        </svg>
+      </span>
+      <span>
+        <b>한국폴리텍대학</b>
+        <span>교육운영계획서 검토 지원 도구</span>
+      </span>
+    </div>
+    <div class="spacer"></div>
+    <button class="admin-btn" onclick="location.href='admin.html'">관리자</button>
   </div>
-  <p style="text-align:center;color:#6b7785;margin-top:50px;font-size:13px;">
-    학위과정(2년제학위과정 / 학위전공심화과정) · 직업교육과정(하이테크 / 전문기술 / 중장년특화장기 / 일반계고위탁 / 기능장)
-  </p>
+
+  <div class="home-inner">
+    <div class="home-hero">
+      <span class="home-badge">● 교육운영계획서 검토 자동화 시스템</span>
+      <h1 class="home-title">학위·직업교육과정<br><span class="accent">교육운영계획서</span> 검토를 한 곳에서</h1>
+      <p class="home-sub">
+        검토위원 배정, 운영계획서 PDF 공유, 과정별 검토항목 입력과 결과 집계까지
+        온라인으로 간편하게 진행합니다.
+      </p>
+
+      <div class="menu-cards">
+        <a class="menu-card" href="result.html">
+          <span class="num">1</span>
+          <span class="icon-wrap">📋</span>
+          <h3>검토결과조회</h3>
+          <p>과정·대학·학과별 검토결과를<br>조회하고 엑셀로 내려받습니다</p>
+        </a>
+        <a class="menu-card" href="reviewer.html">
+          <span class="num">2</span>
+          <span class="icon-wrap">✍️</span>
+          <h3>검토위원</h3>
+          <p>배정된 운영계획서를 확인하고<br>검토결과를 입력합니다</p>
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <div class="home-footer">
+    <div class="prog-info">
+      <b>한국폴리텍대학 교육운영계획서 검토 지원 도구</b><br>
+      개발버전 <b id="appVersion">1.0.0</b> · 개발 <b>학교법인 한국폴리텍대학 AI혁신부</b><br>
+      © 2026 학교법인 한국폴리텍대학. All rights reserved.
+    </div>
+  </div>
 </div>
 
-<footer class="version-footer">
-  <div class="vf-title">한국폴리텍대학 교육운영계획서 검토 지원 도구</div>
-  <div class="vf-version">개발버전 <span id="appVersion">1.0.0</span></div>
-  <div class="vf-dev">개발 · 학교법인 한국폴리텍대학 AI혁신부</div>
-  <div class="vf-copy">© 2026 학교법인 한국폴리텍대학. All rights reserved.</div>
-</footer>
 <script>document.getElementById('appVersion').textContent = window.APP_VERSION;</script>
 </body>
 </html>

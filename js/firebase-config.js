@@ -1,7 +1,7 @@
 // ===================================================================
-// Firebase 프로젝트 설정
-// Firebase 콘솔(https://console.firebase.google.com) > 프로젝트명: review
-// > 프로젝트 설정 > 일반 > 내 앱(웹 앱 추가)에서 복사한 값으로 교체하세요.
+// Firebase 프로젝트 설정 (프로젝트: review-2ec80)
+// Firebase 콘솔(https://console.firebase.google.com) > 프로젝트 설정 > 일반
+// > 내 앱(웹 앱)에서 발급된 값입니다. 프로젝트를 바꾸지 않는 한 이 값을 유지하세요.
 // ===================================================================
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import {
@@ -14,6 +14,7 @@ import {
   getAuth
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
+// For Firebase JS SDK v7.20.0 and later, measurementId is optional
 const firebaseConfig = {
   apiKey: "AIzaSyAw9Owk795ZpbpDx5hBf--20EYFEiMIWTE",
   authDomain: "review-2ec80.firebaseapp.com",
