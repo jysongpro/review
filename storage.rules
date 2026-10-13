@@ -1,0 +1,9 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    match /reviewfiles/{course}/{fileName} {
+      allow read: if true;
+      allow write: if true; // 운영 전 관리자 인증 기반으로 강화 권장
+    }
+  }
+}

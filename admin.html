@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>관리자 - 교육운영계획서 검토 지원도구</title>
+<link rel="stylesheet" href="css/style.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+</head>
+<body>
+<header class="topbar">
+  <h1>관리자</h1>
+  <button class="admin-btn" onclick="location.href='index.html'">메인으로</button>
+</header>
+
+<div id="loginView" class="login-box">
+  <h2>관리자 로그인</h2>
+  <div class="field">
+    <label>비밀번호</label>
+    <input type="password" id="pwInput" placeholder="초기 비밀번호: 1234">
+  </div>
+  <button class="btn" id="loginBtn" style="width:100%;">로그인</button>
+  <div id="loginMsg" class="msg"></div>
+</div>
+
+<div id="adminView" class="container" style="display:none;">
+  <div class="tabs">
+    <div class="tab active" data-tab="reviewers">검토위원 등록</div>
+    <div class="tab" data-tab="targets">검토대상 운영계획서</div>
+    <div class="tab" data-tab="items">검토항목 등록</div>
+    <div class="tab" data-tab="results">등록 내역 / 결과</div>
+    <div class="tab" data-tab="settings">비밀번호 변경</div>
+  </div>
+
+  <!-- 검토위원 등록 -->
+  <section id="panel-reviewers" class="panel">
+    <div class="card">
+      <h2>검토위원 엑셀 업로드 (성명, 소속, 직위, 연락처)</h2>
+      <input type="file" id="reviewerExcel" accept=".xlsx,.xls">
+      <button class="btn" id="uploadReviewerBtn">업로드 저장</button>
+      <span id="reviewerUploadMsg" class="msg"></span>
+    </div>
+    <div class="card">
+      <h2>검토위원 개별 추가</h2>
+      <div class="row">
+        <div class="field"><label>성명</label><input id="revName"></div>
+        <div class="field"><label>소속</label><input id="revOrg"></div>
+        <div class="field"><label>직위</label><input id="revTitle"></div>
+        <div class="field"><label>연락처(010-0000-0000)</label><input id="revPhone"></div>
+      </div>
+      <button class="btn" id="addReviewerBtn">추가</button>
+    </div>
+    <div class="card">
+      <h2>검토위원 목록</h2>
+      <table id="reviewerTable"><thead><tr><th>성명</th><th>소속</th><th>직위</th><th>연락처</th><th>관리</th></tr></thead><tbody></tbody></table>
+    </div>
+  </section>
+
+  <!-- 검토대상 운영계획서 -->
+  <section id="panel-targets" class="panel" style="display:none;">
+    <div class="card">
+      <h2>검토대상 목록 엑셀 업로드</h2>
+      <p style="font-size:12px;color:#6b7785;">
+        필수 컬럼: 대학, 캠퍼스, 과정구분(2년제학위과정/학위전공심화과정/하이테크/전문기술/중장년특화장기/일반계고위탁/기능장), 학과, 전공과정(선택), 담당검토위원(선택, 성명 또는 연락처)
+      </p>
+      <input type="file" id="targetExcel" accept=".xlsx,.xls">
+      <button class="btn" id="uploadTargetBtn">업로드 저장</button>
+      <span id="targetUploadMsg" class="msg"></span>
+    </div>
+    <div class="card">
+      <h2>운영계획서 PDF 업로드</h2>
+      <div class="row">
+        <div class="field"><label>검토대상 선택</label><select id="targetSelectForPdf"></select></div>
+        <div class="field"><label>PDF 파일</label><input type="file" id="pdfFile" accept="application/pdf"></div>
+      </div>
+      <button class="btn" id="uploadPdfBtn">PDF 업로드</button>
+      <span id="pdfUploadMsg" class="msg"></span>
+    </div>
+    <div class="card">
+      <h2>검토대상 목록</h2>
+      <div class="field" style="max-width:260px;">
+        <label>과정 필터</label>
+        <select id="targetCourseFilter"></select>
+      </div>
+      <table id="targetTable">
+        <thead><tr><th>대학</th><th>캠퍼스</th><th>과정구분</th><th>학과</th><th>전공과정</th><th>담당검토위원</th><th>PDF</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- 검토항목 등록 -->
+  <section id="panel-items" class="panel" style="display:none;">
+    <div class="card">
+      <h2>교육과정별 검토항목 등록</h2>
+      <div class="row">
+        <div class="field"><label>과정 선택</label><select id="itemCourseSelect"></select></div>
+        <div class="field"><label>검토분야</label><input id="itemField" placeholder="예: 교육과정 편성"></div>
+      </div>
+      <div class="field"><label>검토문항</label><textarea id="itemQuestion" rows="2" style="width:100%;" placeholder="검토 문항을 입력하세요"></textarea></div>
+      <button class="btn" id="addItemBtn">검토항목 추가</button>
+      <span id="itemAddMsg" class="msg"></span>
+    </div>
+    <div class="card">
+      <h2>등록된 검토항목</h2>
+      <div class="field" style="max-width:260px;">
+        <label>과정 필터</label>
+        <select id="itemCourseFilter"></select>
+      </div>
+      <table id="itemTable"><thead><tr><th>과정</th><th>검토분야</th><th>검토문항</th><th>관리</th></tr></thead><tbody></tbody></table>
+    </div>
+  </section>
+
+  <!-- 등록 내역 / 결과 -->
+  <section id="panel-results" class="panel" style="display:none;">
+    <div class="card">
+      <h2>검토결과 등록 내역</h2>
+      <div class="row">
+        <div class="field" style="max-width:260px;">
+          <label>과정 필터</label>
+          <select id="resultCourseFilter"></select>
+        </div>
+        <div class="field" style="align-self:flex-end;">
+          <button class="btn secondary" id="exportResultsBtn">엑셀로 저장</button>
+        </div>
+      </div>
+      <table id="resultTable">
+        <thead><tr><th>과정</th><th>대학/캠퍼스</th><th>학과</th><th>검토위원</th><th>검토분야</th><th>검토문항</th><th>결과</th><th>검토의견</th><th>등록일시</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- 비밀번호 변경 -->
+  <section id="panel-settings" class="panel" style="display:none;">
+    <div class="card" style="max-width:420px;">
+      <h2>관리자 비밀번호 변경</h2>
+      <div class="field"><label>새 비밀번호</label><input type="password" id="newPw"></div>
+      <button class="btn" id="changePwBtn">변경</button>
+      <span id="pwChangeMsg" class="msg"></span>
+    </div>
+  </section>
+</div>
+
+<script type="module" src="js/admin.js"></script>
+</body>
+</html>

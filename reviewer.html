@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>검토위원 - 교육운영계획서 검토 지원도구</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<header class="topbar">
+  <h1>검토위원</h1>
+  <button class="admin-btn" onclick="location.href='index.html'">메인으로</button>
+</header>
+
+<div id="loginView" class="login-box">
+  <h2>검토위원 로그인</h2>
+  <p style="font-size:12px;color:#6b7785;margin-top:-6px;">
+    관리자가 사전에 등록한 휴대폰 번호로 로그인합니다.
+  </p>
+  <div class="field">
+    <label>휴대폰 번호</label>
+    <input id="phoneInput" placeholder="010-0000-0000" inputmode="numeric">
+  </div>
+  <button class="btn" id="loginBtn" style="width:100%;">로그인</button>
+  <div id="loginMsg" class="msg"></div>
+</div>
+
+<div id="mainView" class="container" style="display:none;">
+  <div class="card">
+    <h2>검토위원 정보</h2>
+    <p id="reviewerInfo"></p>
+    <button class="btn secondary small" id="logoutBtn">로그아웃</button>
+  </div>
+
+  <div class="card">
+    <h2>배정된 검토목록</h2>
+    <table id="assignedTable">
+      <thead><tr><th>과정</th><th>대학</th><th>캠퍼스</th><th>학과</th><th>전공과정</th><th>진행상태</th><th>선택</th></tr></thead>
+      <tbody></tbody>
+    </table>
+  </div>
+
+  <div class="card" id="reviewPanel" style="display:none;">
+    <h2 id="reviewPanelTitle">검토 입력</h2>
+    <p><a id="pdfLink" href="#" target="_blank" class="btn secondary small">운영계획서 PDF 다운로드</a></p>
+    <table id="reviewItemsTable">
+      <thead><tr><th>검토분야</th><th>검토문항</th><th>검토결과</th><th>검토의견</th></tr></thead>
+      <tbody></tbody>
+    </table>
+    <button class="btn" id="saveReviewBtn" style="margin-top:14px;">저장</button>
+    <span id="saveMsg" class="msg"></span>
+  </div>
+</div>
+
+<script type="module" src="js/reviewer.js"></script>
+</body>
+</html>
