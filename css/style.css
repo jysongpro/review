@@ -172,3 +172,16 @@ label{font-size:13px;color:var(--gray);display:block;margin-bottom:4px;}
   margin-top:20px;
 }
 .footer-link a{color:var(--blue);font-size:13px;text-decoration:none;}
+
+.version-footer{
+  position:fixed;
+  right:16px;
+  bottom:12px;
+  text-align:right;
+  color:#9aa5b1;
+  font-size:11px;
+  line-height:1.5;
+  pointer-events:none;
+}
+.version-footer .vf-title{color:#5a6775;font-weight:600;font-size:12px;}
+.version-footer .vf-version{color:var(--blue);font-weight:600;}

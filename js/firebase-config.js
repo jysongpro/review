@@ -15,13 +15,12 @@ import {
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyAw9Owk795ZpbpDx5hBf--20EYFEiMIWTE",
-  authDomain: "review-2ec80.firebaseapp.com",
-  projectId: "review-2ec80",
-  storageBucket: "review-2ec80.firebasestorage.app",
-  messagingSenderId: "222629901538",
-  appId: "1:222629901538:web:0439c925db52c08a4fdabb",
-  measurementId: "G-FQNJVNESGM"
+  apiKey: "YOUR_API_KEY",
+  authDomain: "review-xxxxx.firebaseapp.com",
+  projectId: "review",                 // 설계서 지정 프로젝트명
+  storageBucket: "review-xxxxx.appspot.com",
+  messagingSenderId: "YOUR_SENDER_ID",
+  appId: "YOUR_APP_ID"
 };
 
 export const app = initializeApp(firebaseConfig);
