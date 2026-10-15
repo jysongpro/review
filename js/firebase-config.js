@@ -45,3 +45,21 @@ export function courseCategory(course) {
   }
   return "";
 }
+
+// 검토대상 엑셀(curri 컸럼) 값 → 표준 과정명 매핑
+// 예: "2년제학위" → "2년제학위과정", "하이테크" → "하이테크" (그대로)
+const CURRI_TO_COURSE = {
+  "2년제학위": "2년제학위과정",
+  "2년제학위과정": "2년제학위과정",
+  "학위전공심화": "학위전공심화과정",
+  "학위전공심화과정": "학위전공심화과정",
+  "하이테크": "하이테크",
+  "전문기술": "전문기술",
+  "중장년특화장기": "중장년특화장기",
+  "일반계고위탁": "일반계고위탁",
+  "기능장": "기능장"
+};
+export function mapCurriToCourse(curri) {
+  const v = (curri || "").toString().trim();
+  return CURRI_TO_COURSE[v] || v;
+}

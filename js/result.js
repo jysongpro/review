@@ -9,7 +9,6 @@ let lastRows = [];
 
 $("searchBtn").addEventListener("click", async () => {
   const course = $("courseSel").value;
-  const univ = $("univSel").value.trim();
   const campus = $("campusSel").value.trim();
   const dept = $("deptSel").value.trim();
   const major = $("majorSel").value.trim();
@@ -29,14 +28,13 @@ $("searchBtn").addEventListener("click", async () => {
     const r = d.data();
     const t = targets[r.targetId] || {};
     if (course && t.course !== course) return;
-    if (univ && !(t.univ||"").includes(univ)) return;
     if (campus && !(t.campus||"").includes(campus)) return;
     if (dept && !(t.dept||"").includes(dept)) return;
     if (major && !(t.major||"").includes(major)) return;
     const rev = reviewers[r.reviewerId] || {};
     const it = items[r.itemId] || {};
     rows.push({
-      "과정": t.course||"", "대학": t.univ||"", "캠퍼스": t.campus||"", "학과": t.dept||"", "전공과정": t.major||"",
+      "과정구분": t.course||"", "캠퍼스": t.campus||"", "학과": t.dept||"", "전공과정": t.major||"",
       "검토위원": rev.name||"", "검토분야": it.field||"", "검토문항": it.question||"",
       "결과": r.result||"", "검토의견": r.opinion||""
     });
@@ -51,7 +49,7 @@ function renderTable(rows) {
   const tbody = $("resultTable").querySelector("tbody");
   tbody.innerHTML = "";
   if (rows.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="10" style="text-align:center;color:#999;">조회된 결과가 없습니다.</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="9" style="text-align:center;color:#999;">조회된 결과가 없습니다.</td></tr>`;
     return;
   }
   rows.forEach(row => {

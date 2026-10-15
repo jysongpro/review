@@ -35,7 +35,8 @@
   <!-- 검토위원 등록 -->
   <section id="panel-reviewers" class="panel">
     <div class="card">
-      <h2>검토위원 엑셀 업로드 (성명, 소속, 직위, 연락처)</h2>
+      <h2>검토위원 엑셀 업로드 (휴대폰번호, 대학, 캠퍼스, 학과명, 계열, 직급, 성명, 이메일)</h2>
+      <p style="font-size:13px;color:#6b7785;">휴대폰번호가 검토위원 고유 ID입니다. 동일 번호로 다시 업로드하면 기존 정보가 갱신됩니다.</p>
       <input type="file" id="reviewerExcel" accept=".xlsx,.xls">
       <button class="btn" id="uploadReviewerBtn">업로드 저장</button>
       <span id="reviewerUploadMsg" class="msg"></span>
@@ -43,16 +44,27 @@
     <div class="card">
       <h2>검토위원 개별 추가</h2>
       <div class="row">
-        <div class="field"><label>성명</label><input id="revName"></div>
-        <div class="field"><label>소속</label><input id="revOrg"></div>
-        <div class="field"><label>직위</label><input id="revTitle"></div>
-        <div class="field"><label>연락처(010-0000-0000)</label><input id="revPhone"></div>
+        <div class="field"><label>휴대폰번호(ID) *</label><input id="revPhone" placeholder="010-0000-0000"></div>
+        <div class="field"><label>성명 *</label><input id="revName"></div>
+        <div class="field"><label>이메일</label><input id="revEmail"></div>
+      </div>
+      <div class="row">
+        <div class="field"><label>대학</label><input id="revUniv"></div>
+        <div class="field"><label>캠퍼스</label><input id="revCampus"></div>
+        <div class="field"><label>학과명</label><input id="revDept"></div>
+        <div class="field"><label>계열</label><input id="revTrack"></div>
+        <div class="field"><label>직급</label><input id="revTitle"></div>
       </div>
       <button class="btn" id="addReviewerBtn">추가</button>
     </div>
     <div class="card">
       <h2>검토위원 목록</h2>
-      <table id="reviewerTable"><thead><tr><th>성명</th><th>소속</th><th>직위</th><th>연락처</th><th>관리</th></tr></thead><tbody></tbody></table>
+      <table id="reviewerTable"><thead><tr><th>휴대폰번호</th><th>성명</th><th>대학</th><th>캠퍼스</th><th>학과명</th><th>계열</th><th>직급</th><th>이메일</th><th>관리</th></tr></thead><tbody></tbody></table>
+    </div>
+    <div class="card">
+      <h2>검토위원별 배정목록 전체보기</h2>
+      <p style="font-size:13px;color:#6b7785;">각 검토위원에게 배정된 검토대상(No) 목록을 한눈에 확인합니다.</p>
+      <div id="reviewerAssignOverview"></div>
     </div>
   </section>
 
@@ -61,29 +73,46 @@
     <div class="card">
       <h2>검토대상 목록 엑셀 업로드</h2>
       <p style="font-size:12px;color:#6b7785;">
-        필수 컬럼: 대학, 캠퍼스, 과정구분(2년제학위과정/학위전공심화과정/하이테크/전문기술/중장년특화장기/일반계고위탁/기능장), 학과, 전공과정(선택), 담당검토위원(선택, 성명 또는 연락처)
+        엱셀 컸럼: No, collage(계열), campus(칤퍼스), dept(학과), major(전공과정), curri(과정구분), cate(분야), per(기간), dn(주야), filename(PDF 파일명)<br>
+        PDF 원본은 서버의 <code>/Files/</code> 폴더에 filename 필드와 동일한 이름으로 이미 위치해야 하며, 별도 업로드는 필요없습니다.
       </p>
       <input type="file" id="targetExcel" accept=".xlsx,.xls">
-      <button class="btn" id="uploadTargetBtn">업로드 저장</button>
+      <button class="btn" id="uploadTargetBtn">업로드 저장(전체 교체)</button>
       <span id="targetUploadMsg" class="msg"></span>
     </div>
     <div class="card">
-      <h2>운영계획서 PDF 업로드</h2>
+      <h2>검토위원 배정 엑셀 일괄 업로드</h2>
+      <p style="font-size:12px;color:#6b7785;">
+        엑셀 컴럼: 휴대폰번호, 검토목록(검토대상의 No 값). 한 검토위원이 여러 건 맡을 경우 행을 나눠서 입력합니다.<br>
+        예) 1054356423 / 1,&nbsp;&nbsp;1054356424 / 5
+      </p>
+      <input type="file" id="assignExcel" accept=".xlsx,.xls">
+      <button class="btn" id="uploadAssignBtn">업로드 배정 저장</button>
+      <span id="assignUploadMsg" class="msg"></span>
+    </div>
+    <div class="card">
+      <h2>검토위원 배정 개별 설정</h2>
       <div class="row">
-        <div class="field"><label>검토대상 선택</label><select id="targetSelectForPdf"></select></div>
-        <div class="field"><label>PDF 파일</label><input type="file" id="pdfFile" accept="application/pdf"></div>
+        <div class="field"><label>검토대상 선택</label><select id="targetSelectForAssign"></select></div>
+        <div class="field"><label>담당검토위원 휴대폰번호</label><input id="assignPhoneInput" placeholder="010-0000-0000"></div>
       </div>
-      <button class="btn" id="uploadPdfBtn">PDF 업로드</button>
-      <span id="pdfUploadMsg" class="msg"></span>
+      <button class="btn" id="assignBtn">배정 저장</button>
+      <span id="assignMsg" class="msg"></span>
     </div>
     <div class="card">
       <h2>검토대상 목록</h2>
-      <div class="field" style="max-width:260px;">
-        <label>과정 필터</label>
-        <select id="targetCourseFilter"></select>
+      <div class="row">
+        <div class="field" style="max-width:220px;">
+          <label>과정 필터</label>
+          <select id="targetCourseFilter"></select>
+        </div>
+        <div class="field" style="max-width:220px;">
+          <label>캠퍼스/학과 검색</label>
+          <input id="targetSearchInput" placeholder="캠퍼스 또는 학과명">
+        </div>
       </div>
       <table id="targetTable">
-        <thead><tr><th>대학</th><th>캠퍼스</th><th>과정구분</th><th>학과</th><th>전공과정</th><th>담당검토위원</th><th>PDF</th></tr></thead>
+        <thead><tr><th>No</th><th>계열</th><th>칤퍼스</th><th>학과</th><th>전공과정</th><th>과정구분</th><th>분야</th><th>기간</th><th>주야</th><th>담당검토위원</th><th>PDF</th></tr></thead>
         <tbody></tbody>
       </table>
     </div>

@@ -1,6 +1,6 @@
 import { db, storage } from "./firebase-config.js";
 import {
-  collection, getDocs, query, where, doc, getDoc, addDoc, updateDoc
+  collection, getDocs, query, where, doc, getDoc, setDoc, addDoc, updateDoc
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import { setReviewerSession, getReviewerSession, clearReviewerSession, nowStr, toast } from "./common.js";
 
@@ -8,16 +8,20 @@ const $ = (id) => document.getElementById(id);
 
 // =========================================================================
 // 로그인 방식
-// 검토위원 정보(이름, 소속, 직위, 휴대폰번호)는 관리자가 엑셀로 사전 일괄 등록합니다.
+// 검토위원 정보(휴대폰번호, 대학, 캠퍼스, 학과명, 계열, 직급, 성명, 이메일)는
+// 관리자가 엑셀로 사전 일괄 등록합니다. reviewers 컬렉션의 문서 ID가 곰 휴대폰번호입니다.
 // 별도 회원가입/인증번호 발급 절차 없이, 휴대폰번호 자체가 로그인 ID 역할을 합니다.
-// 입력한 번호가 reviewers 컬렉션에 등록된 번호와 일치하면 해당 검토위원으로 로그인됩니다.
+// 입력한 번호와 일치하는 문서 ID(reviewers/{phone})가 있으면 해당 검토위원으로 로그인됩니다.
 // =========================================================================
 
 function normalizePhone(v) {
-  return (v || "").replace(/[^0-9]/g, "");
+  return (v || "").toString().replace(/[^0-9]/g, "");
 }
 
 async function findReviewerByPhone(phoneDigits) {
+  const snap = await getDoc(doc(db, "reviewers", phoneDigits));
+  if (snap.exists()) return { id: snap.id, data: () => snap.data() };
+  // 구 버전 데이터(문서 ID가 휴대폰번호가 아닌 경우)를 위한 호환 검색
   const all = await getDocs(collection(db, "reviewers"));
   return all.docs.find(d => normalizePhone(d.data().phone) === phoneDigits);
 }
@@ -48,7 +52,8 @@ function showMain() {
   const r = getReviewerSession();
   $("loginView").style.display = "none";
   $("mainView").style.display = "block";
-  $("reviewerInfo").textContent = `${r.name} (${r.org || ""} ${r.title || ""}) / ${r.phone}`;
+  $("reviewerInfo").textContent =
+    `${r.name} (${r.univ || ""} ${r.campus || ""} ${r.dept || ""} ${r.track || ""} ${r.title || ""}) / ${r.phone}${r.email ? " / " + r.email : ""}`;
   loadAssigned();
 }
 
@@ -64,18 +69,18 @@ async function loadAssigned() {
   targetsSnap.forEach(d => {
     const t = d.data();
     const assigned = (t.reviewerAssigned || "");
-    // 담당검토위원 컬럼은 이름 또는 휴대폰번호 어느 쪽으로 기재되어도 매칭되도록 처리
-    const isMine = assigned && (assigned === r.name || normalizePhone(assigned) === normalizePhone(r.phone));
+    // 담당검토위원 컬럼은 휴대폰번호(ID)로 저장되며, 구버전(이름) 데이터도 호환 매칭
+    const isMine = assigned && (normalizePhone(assigned) === normalizePhone(r.phone) || assigned === r.name);
     if (!isMine) return;
     count++;
     const tr = document.createElement("tr");
-    tr.innerHTML = `<td>${t.course||""}</td><td>${t.univ||""}</td><td>${t.campus||""}</td><td>${t.dept||""}</td><td>${t.major||""}</td>
+    tr.innerHTML = `<td>${t.course||""}</td><td>${t.campus||""}</td><td>${t.dept||""}</td><td>${t.major||""}</td>
       <td>${doneTargetIds.has(d.id) ? '<span class="badge ok">작성완료</span>' : '<span class="badge pending">미작성</span>'}</td>
       <td><button class="btn small" data-id="${d.id}">선택</button></td>`;
     tbody.appendChild(tr);
   });
   if (count === 0) {
-    tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;color:#999;">배정된 검토목록이 없습니다.</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;color:#999;">배정된 검토목록이 없습니다.</td></tr>`;
   }
   tbody.querySelectorAll("button[data-id]").forEach(btn => {
     btn.addEventListener("click", () => openReviewPanel(btn.dataset.id));
@@ -87,7 +92,7 @@ async function openReviewPanel(targetId) {
   const tSnap = await getDoc(doc(db, "targets", targetId));
   const t = tSnap.data();
   $("reviewPanel").style.display = "block";
-  $("reviewPanelTitle").textContent = `검토 입력 - [${t.course}] ${t.univ} ${t.campus} ${t.dept} ${t.major||""}`;
+  $("reviewPanelTitle").textContent = `검토 입력 - [${t.course}] ${t.campus} ${t.dept} ${t.major||""}`;
   $("pdfLink").href = t.pdfUrl || "#";
   $("pdfLink").textContent = t.pdfUrl ? "운영계획서 PDF 다운로드" : "업로드된 PDF가 없습니다";
 
