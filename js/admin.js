@@ -345,21 +345,18 @@ async function nextMainNo(course, part) {
 $("addItemBtn").addEventListener("click", async () => {
   const course = $("itemCourseSelect").value;
   const part = $("itemPartSelect").value;
-  const field = $("itemField").value.trim();
   const question = $("itemQuestion").value.trim();
   if (!course) return toast($("itemAddMsg"), "과정을 선택하세요.", true);
-  if (!field) { toast($("itemAddMsg"), "검토분야를 입력하세요.", true); $("itemField").focus(); return; }
   if (!question) { toast($("itemAddMsg"), "검토문항을 입력하세요.", true); $("itemQuestion").focus(); return; }
 
   $("addItemBtn").disabled = true;
   try {
     const mainNo = await nextMainNo(course, part);
-    await addDoc(collection(db, "reviewItems"), { course, part, mainNo, subNo: 0, field, question });
+    await addDoc(collection(db, "reviewItems"), { course, part, mainNo, subNo: 0, field: "", question });
 
-    // 다음 항목을 바로 이어서 입력할 수 있도록 입력란만 비우고(과정/구분은 유지) 포커스를 검토분야로 이동
-    $("itemField").value = "";
+    // 다음 항목을 바로 이어서 입력할 수 있도록 입력란만 비우고(과정/구분은 유지) 포커스를 검토문항으로 이동
     $("itemQuestion").value = "";
-    $("itemField").focus();
+    $("itemQuestion").focus();
 
     toast($("itemAddMsg"), `${mainNo}번 항목으로 저장되었습니다. 계속해서 다음 항목을 입력하세요.`);
 
