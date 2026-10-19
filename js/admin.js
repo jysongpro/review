@@ -298,28 +298,36 @@ $("uploadAssignBtn").addEventListener("click", async () => {
 });
 
 // ===================== 검토항목 등록 =====================
+// part1: 교과과정개편 세부기준 준수 여부 / part2: 교육운영계획서 세부내용 검토
+const PART_LABEL = { part1: "1. 교과과정개편 세부기준 준수 여부", part2: "2. 교육운영계획서 세부내용 검토" };
+
 async function loadItems() {
   const snap = await getDocs(collection(db, "reviewItems"));
   const filter = $("itemCourseFilter").value;
-  const tbody = $("itemTable").querySelector("tbody");
-  tbody.innerHTML = "";
+  const tbody1 = $("itemTablePart1").querySelector("tbody");
+  const tbody2 = $("itemTablePart2").querySelector("tbody");
+  tbody1.innerHTML = ""; tbody2.innerHTML = "";
   snap.forEach(d => {
     const r = d.data();
     if (filter && r.course !== filter) return;
+    const tbody = r.part === "part2" ? tbody2 : tbody1;
     const tr = document.createElement("tr");
     tr.innerHTML = `<td>${r.course||""}</td><td>${r.field||""}</td><td>${r.question||""}</td>
       <td><button class="btn small danger" onclick="window.__deleteItem('${d.id}')">삭제</button></td>`;
     tbody.appendChild(tr);
   });
+  if (!tbody1.children.length) tbody1.innerHTML = `<tr><td colspan="4" style="text-align:center;color:#999;">등록된 항목이 없습니다.</td></tr>`;
+  if (!tbody2.children.length) tbody2.innerHTML = `<tr><td colspan="4" style="text-align:center;color:#999;">등록된 항목이 없습니다.</td></tr>`;
 }
 $("itemCourseFilter").addEventListener("change", loadItems);
 
 $("addItemBtn").addEventListener("click", async () => {
   const course = $("itemCourseSelect").value;
+  const part = $("itemPartSelect").value;
   const field = $("itemField").value.trim();
   const question = $("itemQuestion").value.trim();
   if (!course || !field || !question) return toast($("itemAddMsg"), "모든 항목을 입력하세요.", true);
-  await addDoc(collection(db, "reviewItems"), { course, field, question });
+  await addDoc(collection(db, "reviewItems"), { course, part, field, question });
   $("itemField").value = ""; $("itemQuestion").value = "";
   toast($("itemAddMsg"), "저장되었습니다.");
   loadItems();
@@ -356,13 +364,13 @@ async function loadResults() {
     if (filter && t.course !== filter) return;
     const row = {
       "과정": t.course || "", "캠퍼스": t.campus || "", "학과": t.dept || "", "전공과정": t.major || "",
-      "검토위원": rev.name || "", "검토분야": it.field || "", "검토문항": it.question || "",
+      "검토위원": rev.name || "", "구분": PART_LABEL[it.part] || PART_LABEL.part1, "검토분야": it.field || "", "검토문항": it.question || "",
       "결과": r.result || "", "검토의견": r.opinion || "", "등록일시": r.updatedAt || ""
     };
     _allResultsCache.push(row);
     const tr = document.createElement("tr");
     tr.innerHTML = `<td>${row["과정"]}</td><td>${row["캠퍼스"]}</td><td>${row["학과"]}</td><td>${row["검토위원"]}</td>
-      <td>${row["검토분야"]}</td><td>${row["검토문항"]}</td>
+      <td>${row["구분"]}</td><td>${row["검토분야"]}</td><td>${row["검토문항"]}</td>
       <td><span class="badge ${row["결과"]==="적합"?"ok":row["결과"]==="부적합"?"bad":"pending"}">${row["결과"]||"미입력"}</span></td>
       <td>${row["검토의견"]}</td><td>${row["등록일시"]}</td>`;
     tbody.appendChild(tr);

@@ -103,9 +103,11 @@ async function openReviewPanel(targetId) {
   const existing = {};
   resultsSnap.forEach(d => existing[d.data().itemId] = { id: d.id, ...d.data() });
 
-  const tbody = $("reviewItemsTable").querySelector("tbody");
-  tbody.innerHTML = "";
-  itemsSnap.forEach(d => {
+  const tbody1 = $("reviewItemsTablePart1").querySelector("tbody");
+  const tbody2 = $("reviewItemsTablePart2").querySelector("tbody");
+  tbody1.innerHTML = ""; tbody2.innerHTML = "";
+
+  function renderRow(d) {
     const it = d.data();
     const ex = existing[d.id];
     const tr = document.createElement("tr");
@@ -122,15 +124,19 @@ async function openReviewPanel(targetId) {
       </td>
       <td><input type="text" class="opinionInput" style="width:100%;" value="${ex ? (ex.opinion||"").replace(/"/g,'&quot;') : ""}"></td>
     `;
-    tbody.appendChild(tr);
-  });
-  if (itemsSnap.empty) {
-    tbody.innerHTML = `<tr><td colspan="4" style="text-align:center;color:#999;">등록된 검토항목이 없습니다. 관리자에게 문의하세요.</td></tr>`;
+    return tr;
   }
 
+  itemsSnap.forEach(d => {
+    const it = d.data();
+    const tbody = it.part === "part2" ? tbody2 : tbody1;
+    tbody.appendChild(renderRow(d));
+  });
+  if (!tbody1.children.length) tbody1.innerHTML = `<tr><td colspan="4" style="text-align:center;color:#999;">등록된 검토항목이 없습니다.</td></tr>`;
+  if (!tbody2.children.length) tbody2.innerHTML = `<tr><td colspan="4" style="text-align:center;color:#999;">등록된 검토항목이 없습니다.</td></tr>`;
+
   $("saveReviewBtn").onclick = async () => {
-    const rows = tbody.querySelectorAll("tr[data-item-id], tr");
-    const trRows = tbody.querySelectorAll("tr");
+    const trRows = [...tbody1.querySelectorAll("tr"), ...tbody2.querySelectorAll("tr")];
     for (const row of trRows) {
       const itemId = row.dataset.itemId;
       if (!itemId) continue;

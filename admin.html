@@ -124,6 +124,13 @@
       <h2>교육과정별 검토항목 등록</h2>
       <div class="row">
         <div class="field"><label>과정 선택</label><select id="itemCourseSelect"></select></div>
+        <div class="field">
+          <label>검토구분</label>
+          <select id="itemPartSelect">
+            <option value="part1">1. 교과과정개편 세부기준 준수 여부</option>
+            <option value="part2">2. 교육운영계획서 세부내용 검토</option>
+          </select>
+        </div>
         <div class="field"><label>검토분야</label><input id="itemField" placeholder="예: 교육과정 편성"></div>
       </div>
       <div class="field"><label>검토문항</label><textarea id="itemQuestion" rows="2" style="width:100%;" placeholder="검토 문항을 입력하세요"></textarea></div>
@@ -132,11 +139,16 @@
     </div>
     <div class="card">
       <h2>등록된 검토항목</h2>
-      <div class="field" style="max-width:260px;">
-        <label>과정 필터</label>
-        <select id="itemCourseFilter"></select>
+      <div class="row">
+        <div class="field" style="max-width:260px;">
+          <label>과정 필터</label>
+          <select id="itemCourseFilter"></select>
+        </div>
       </div>
-      <table id="itemTable"><thead><tr><th>과정</th><th>검토분야</th><th>검토문항</th><th>관리</th></tr></thead><tbody></tbody></table>
+      <h3 style="font-size:14px;color:#0f2c5c;margin:18px 0 8px;">1. 교과과정개편 세부기준 준수 여부</h3>
+      <table id="itemTablePart1"><thead><tr><th>과정</th><th>검토분야</th><th>검토문항</th><th>관리</th></tr></thead><tbody></tbody></table>
+      <h3 style="font-size:14px;color:#0f2c5c;margin:22px 0 8px;">2. 교육운영계획서 세부내용 검토</h3>
+      <table id="itemTablePart2"><thead><tr><th>과정</th><th>검토분야</th><th>검토문항</th><th>관리</th></tr></thead><tbody></tbody></table>
     </div>
   </section>
 
