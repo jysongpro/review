@@ -299,7 +299,12 @@ $("uploadAssignBtn").addEventListener("click", async () => {
 
 // ===================== 검토항목 등록 =====================
 // part1: 교과과정개편 세부기준 준수 여부 / part2: 교육운영계획서 세부내용 검토
+// mainNo: 과정+구분(part) 내에서 자동 증가하는 순번. subNo: 0이면 주항목, 1 이상이면 소항목(1-1, 1-2 ...)
 const PART_LABEL = { part1: "1. 교과과정개편 세부기준 준수 여부", part2: "2. 교육운영계획서 세부내용 검토" };
+
+function itemNoLabel(it) {
+  return it.subNo ? `${it.mainNo}-${it.subNo}` : `${it.mainNo}`;
+}
 
 async function loadItems() {
   const snap = await getDocs(collection(db, "reviewItems"));
@@ -307,31 +312,94 @@ async function loadItems() {
   const tbody1 = $("itemTablePart1").querySelector("tbody");
   const tbody2 = $("itemTablePart2").querySelector("tbody");
   tbody1.innerHTML = ""; tbody2.innerHTML = "";
-  snap.forEach(d => {
-    const r = d.data();
+
+  const rows = [];
+  snap.forEach(d => rows.push({ id: d.id, ...d.data() }));
+  rows.sort((a, b) => (a.mainNo||0) - (b.mainNo||0) || (a.subNo||0) - (b.subNo||0));
+
+  rows.forEach(r => {
     if (filter && r.course !== filter) return;
     const tbody = r.part === "part2" ? tbody2 : tbody1;
     const tr = document.createElement("tr");
-    tr.innerHTML = `<td>${r.course||""}</td><td>${r.field||""}</td><td>${r.question||""}</td>
-      <td><button class="btn small danger" onclick="window.__deleteItem('${d.id}')">삭제</button></td>`;
+    const subBtn = !r.subNo
+      ? `<button class="btn small secondary" onclick="window.__addSubItem('${r.id}')">소항목 추가</button>`
+      : "";
+    tr.innerHTML = `<td>${itemNoLabel(r)}</td><td>${r.course||""}</td><td>${r.field||""}</td><td>${r.question||""}</td>
+      <td>${subBtn}
+        <button class="btn small danger" onclick="window.__deleteItem('${r.id}')">삭제</button>
+      </td>`;
     tbody.appendChild(tr);
   });
-  if (!tbody1.children.length) tbody1.innerHTML = `<tr><td colspan="4" style="text-align:center;color:#999;">등록된 항목이 없습니다.</td></tr>`;
-  if (!tbody2.children.length) tbody2.innerHTML = `<tr><td colspan="4" style="text-align:center;color:#999;">등록된 항목이 없습니다.</td></tr>`;
+  if (!tbody1.children.length) tbody1.innerHTML = `<tr><td colspan="5" style="text-align:center;color:#999;">등록된 항목이 없습니다.</td></tr>`;
+  if (!tbody2.children.length) tbody2.innerHTML = `<tr><td colspan="5" style="text-align:center;color:#999;">등록된 항목이 없습니다.</td></tr>`;
 }
 $("itemCourseFilter").addEventListener("change", loadItems);
+
+async function nextMainNo(course, part) {
+  const snap = await getDocs(query(collection(db, "reviewItems"), where("course", "==", course), where("part", "==", part)));
+  let max = 0;
+  snap.forEach(d => { const n = d.data().mainNo || 0; if (n > max) max = n; });
+  return max + 1;
+}
 
 $("addItemBtn").addEventListener("click", async () => {
   const course = $("itemCourseSelect").value;
   const part = $("itemPartSelect").value;
   const field = $("itemField").value.trim();
   const question = $("itemQuestion").value.trim();
-  if (!course || !field || !question) return toast($("itemAddMsg"), "모든 항목을 입력하세요.", true);
-  await addDoc(collection(db, "reviewItems"), { course, part, field, question });
-  $("itemField").value = ""; $("itemQuestion").value = "";
-  toast($("itemAddMsg"), "저장되었습니다.");
-  loadItems();
+  if (!course) return toast($("itemAddMsg"), "과정을 선택하세요.", true);
+  if (!field) { toast($("itemAddMsg"), "검토분야를 입력하세요.", true); $("itemField").focus(); return; }
+  if (!question) { toast($("itemAddMsg"), "검토문항을 입력하세요.", true); $("itemQuestion").focus(); return; }
+
+  $("addItemBtn").disabled = true;
+  try {
+    const mainNo = await nextMainNo(course, part);
+    await addDoc(collection(db, "reviewItems"), { course, part, mainNo, subNo: 0, field, question });
+
+    // 다음 항목을 바로 이어서 입력할 수 있도록 입력란만 비우고(과정/구분은 유지) 포커스를 검토분야로 이동
+    $("itemField").value = "";
+    $("itemQuestion").value = "";
+    $("itemField").focus();
+
+    toast($("itemAddMsg"), `${mainNo}번 항목으로 저장되었습니다. 계속해서 다음 항목을 입력하세요.`);
+
+    // 방금 저장한 과정으로 목록 필터를 맞추어 바로 아래에 보이도록 처리
+    if ($("itemCourseFilter").value !== course) {
+      $("itemCourseFilter").value = course;
+    }
+    loadItems();
+  } catch (e) {
+    toast($("itemAddMsg"), "저장 실패: " + e.message, true);
+  } finally {
+    $("addItemBtn").disabled = false;
+  }
 });
+
+window.__addSubItem = async (parentId) => {
+  const pSnap = await getDoc(doc(db, "reviewItems", parentId));
+  if (!pSnap.exists()) return;
+  const parent = pSnap.data();
+  const field = prompt("소항목 검토분야", parent.field) ?? "";
+  if (field === null) return;
+  const question = prompt("소항목 검토문항", "");
+  if (question === null || !question.trim()) return;
+
+  const siblingsSnap = await getDocs(query(
+    collection(db, "reviewItems"),
+    where("course", "==", parent.course),
+    where("part", "==", parent.part),
+    where("mainNo", "==", parent.mainNo)
+  ));
+  let maxSub = 0;
+  siblingsSnap.forEach(d => { const n = d.data().subNo || 0; if (n > maxSub) maxSub = n; });
+
+  await addDoc(collection(db, "reviewItems"), {
+    course: parent.course, part: parent.part, mainNo: parent.mainNo, subNo: maxSub + 1,
+    field: field.trim(), question: question.trim()
+  });
+  loadItems();
+};
+
 window.__deleteItem = async (id) => {
   if (!confirm("삭제하시겠습니까?")) return;
   await deleteDoc(doc(db, "reviewItems", id));

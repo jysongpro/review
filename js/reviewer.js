@@ -107,12 +107,17 @@ async function openReviewPanel(targetId) {
   const tbody2 = $("reviewItemsTablePart2").querySelector("tbody");
   tbody1.innerHTML = ""; tbody2.innerHTML = "";
 
+  function itemNoLabel(it) {
+    return it.subNo ? `${it.mainNo||""}-${it.subNo}` : `${it.mainNo||""}`;
+  }
+
   function renderRow(d) {
     const it = d.data();
     const ex = existing[d.id];
     const tr = document.createElement("tr");
     tr.dataset.itemId = d.id;
     tr.innerHTML = `
+      <td>${itemNoLabel(it)}</td>
       <td>${it.field}</td>
       <td>${it.question}</td>
       <td>
@@ -127,10 +132,12 @@ async function openReviewPanel(targetId) {
     return tr;
   }
 
-  itemsSnap.forEach(d => {
-    const it = d.data();
+  const itemRows = [];
+  itemsSnap.forEach(d => itemRows.push({ id: d.id, ...d.data() }));
+  itemRows.sort((a, b) => (a.mainNo||0) - (b.mainNo||0) || (a.subNo||0) - (b.subNo||0));
+  itemRows.forEach(it => {
     const tbody = it.part === "part2" ? tbody2 : tbody1;
-    tbody.appendChild(renderRow(d));
+    tbody.appendChild(renderRow({ id: it.id, data: () => it }));
   });
   if (!tbody1.children.length) tbody1.innerHTML = `<tr><td colspan="4" style="text-align:center;color:#999;">등록된 검토항목이 없습니다.</td></tr>`;
   if (!tbody2.children.length) tbody2.innerHTML = `<tr><td colspan="4" style="text-align:center;color:#999;">등록된 검토항목이 없습니다.</td></tr>`;
