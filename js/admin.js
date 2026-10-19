@@ -10,6 +10,16 @@ import { buildCourseOptions, parseExcelFile, exportToExcel, isAdminLoggedIn, set
 const $ = (id) => document.getElementById(id);
 function normalizePhone(v) { return (v || "").toString().replace(/[^0-9]/g, ""); }
 
+// 버튼 클릭 등에서 발생한 예외가 화면에 전혀 표시되지 않고 조용히 무시되는 것을 방지하기 위한 전역 오류 알림
+window.addEventListener("error", (ev) => {
+  console.error("[admin.js 오류]", ev.error || ev.message);
+  alert("스크립트 오류가 발생했습니다: " + (ev.message || ev.error));
+});
+window.addEventListener("unhandledrejection", (ev) => {
+  console.error("[admin.js Promise 오류]", ev.reason);
+  alert("처리 중 오류가 발생했습니다: " + (ev.reason && ev.reason.message ? ev.reason.message : ev.reason));
+});
+
 // ---------- 로그인 ----------
 async function ensureAdminSettingsDoc() {
   const ref_ = doc(db, "settings", "admin");
