@@ -5,7 +5,7 @@ import {
 import {
   ref, uploadBytes, getDownloadURL
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js";
-import { buildCourseOptions, parseExcelFile, exportToExcel, isAdminLoggedIn, setAdminLoggedIn, toast } from "./common.js";
+import { buildCourseOptions, parseExcelFile, exportToExcel, exportToExcelWithMerges, isAdminLoggedIn, setAdminLoggedIn, toast } from "./common.js";
 
 const $ = (id) => document.getElementById(id);
 function normalizePhone(v) { return (v || "").toString().replace(/[^0-9]/g, ""); }
@@ -354,17 +354,16 @@ async function loadItems() {
     const isDup = dupKeyCount[key] > 1;
     const tr = document.createElement("tr");
     if (isDup) tr.style.background = "#ffecec";
-    tr.innerHTML = `<td>${itemNoLabel(r)}</td><td>${r.course||""}</td><td>${PART_LABEL[r.part] ? (r.part==="part2"?"2":"1") : "1"}</td>
+    tr.innerHTML = `<td>${itemNoLabel(r)}</td><td>${r.course||""}</td>
       <td>${isDup ? '<span class="badge bad" style="margin-right:6px;">중복</span>' : ""}${r.question||""}</td>
-      <td style="font-size:11px;color:#999;">${r.id}</td>
       <td>
         <button class="btn small secondary" onclick="window.__editItem('${r.id}')">수정</button>
         <button class="btn small danger" onclick="window.__deleteItem('${r.id}')">삭제</button>
       </td>`;
     tbody.appendChild(tr);
   });
-  if (!tbody1.children.length) tbody1.innerHTML = `<tr><td colspan="6" style="text-align:center;color:#999;">등록된 항목이 없습니다.</td></tr>`;
-  if (!tbody2.children.length) tbody2.innerHTML = `<tr><td colspan="6" style="text-align:center;color:#999;">등록된 항목이 없습니다.</td></tr>`;
+  if (!tbody1.children.length) tbody1.innerHTML = `<tr><td colspan="4" style="text-align:center;color:#999;">등록된 항목이 없습니다.</td></tr>`;
+  if (!tbody2.children.length) tbody2.innerHTML = `<tr><td colspan="4" style="text-align:center;color:#999;">등록된 항목이 없습니다.</td></tr>`;
   $("part1Count").textContent = count1;
   $("part2Count").textContent = count2;
 }
@@ -506,15 +505,23 @@ async function loadResults() {
 }
 $("resultCourseFilter").addEventListener("change", loadResults);
 
-// ---- 엑셀 다운로드: 과정의 전체 검토문항을 "번호.문항"(결과) + "번호.문항 의견"(의견) 열로 펼치고,
-//      마지막 열에 최종검토결과(부적합이 하나라도 있으면 부적합, 전부 적합이면 적합, 그 외 미정)을 추가 ----
+// ---- 엑셀 다운로드 ----
+// 과정별로 검토문항이 다르기 때문에 관리자가 과정을 반드시 1개 선택한 상태여야만 다운로드 가능
+// 엑셀 구성: 1행=제목("00과정 검토결과"), 2~3행=헤더(검토문항은 가로 2칸 병합 후 검토결과/검토의견으로 분할,
+// 매학 단일 컴럼은 2~3행 세로 병합), 4행부터 데이터
+function colLetter(idx) {
+  let s = "", n = idx;
+  do { s = String.fromCharCode(65 + (n % 26)) + s; n = Math.floor(n / 26) - 1; } while (n >= 0);
+  return s;
+}
 $("exportResultsBtn").addEventListener("click", () => {
   const { targets, reviewers, items, resultsByKey, submissions } = _resultsContext;
   const filter = $("resultCourseFilter").value;
+  if (!filter) return alert("다운로드할 과정을 먼저 선택하세요. (과정별로 검토문항이 다르기 때문에 과정을 선택해야만 다운로드할 수 있습니다.)");
 
   const rows = [];
   Object.values(targets).forEach(t => {
-    if (filter && t.course !== filter) return;
+    if (t.course !== filter) return;
     const phone = normalizePhone(t.reviewerAssigned);
     if (!phone) return;
     const rev = reviewers[phone];
@@ -525,22 +532,44 @@ $("exportResultsBtn").addEventListener("click", () => {
 
   if (!rows.length) return alert("내려받을 검토결과가 없습니다.");
 
-  const coursesInRows = [...new Set(rows.map(r => r.t.course))];
   const itemRows = Object.values(items)
-    .filter(it => coursesInRows.includes(it.course))
-    .sort((a, b) =>
-      (a.course || "").localeCompare(b.course || "") ||
-      (a.mainNo||0) - (b.mainNo||0) || (a.subNo||0) - (b.subNo||0)
-    );
-  const multiCourse = coursesInRows.length > 1;
+    .filter(it => it.course === filter)
+    .sort((a, b) => (a.mainNo||0) - (b.mainNo||0) || (a.subNo||0) - (b.subNo||0));
 
   function itemNo(it) { return it.subNo ? `${it.mainNo||""}-${it.subNo}` : `${it.mainNo||""}`; }
-  function colLabel(it) {
-    const base = `${itemNo(it)}.${it.question || ""}`;
-    return multiCourse ? `[${it.course}] ${base}` : base;
-  }
 
-  const excelRows = rows.map(({ t, rev }) => {
+  const singleHeaders = ["과정", "대학", "캠퍼스", "학과", "전공", "계열", "검토위원", "상태", "등록일시"];
+  const tailHeaders = ["최종결과", "최종검토의견"];
+  const totalCols = singleHeaders.length + itemRows.length * 2 + tailHeaders.length;
+
+  const row1 = new Array(totalCols).fill("");
+  row1[0] = `${filter} 검토결과`;
+  const row2 = new Array(totalCols).fill("");
+  const row3 = new Array(totalCols).fill("");
+  const merges = [{ s: { r: 0, c: 0 }, e: { r: 0, c: totalCols - 1 } }];
+
+  let c = 0;
+  singleHeaders.forEach(h => {
+    row2[c] = h;
+    merges.push({ s: { r: 1, c }, e: { r: 2, c } });
+    c++;
+  });
+  itemRows.forEach(it => {
+    row2[c] = `${itemNo(it)}. ${it.question || ""}`;
+    merges.push({ s: { r: 1, c }, e: { r: 1, c: c + 1 } });
+    row3[c] = "검토결과";
+    row3[c + 1] = "검토의견";
+    c += 2;
+  });
+  tailHeaders.forEach(h => {
+    row2[c] = h;
+    merges.push({ s: { r: 1, c }, e: { r: 2, c } });
+    c++;
+  });
+
+  const aoa = [row1, row2, row3];
+
+  rows.forEach(({ t, rev }) => {
     const key = `${t.id}_${normalizePhone(t.reviewerAssigned)}`;
     const sub = submissions[key];
     const resultList = resultsByKey[key] || [];
@@ -552,28 +581,22 @@ $("exportResultsBtn").addEventListener("click", () => {
     else if (resultList.length || (sub && sub.status === "draft")) status = "작성중";
     const updatedAt = (sub && (sub.submittedAt || sub.updatedAt)) || "";
 
-    const row = {
-      "과정": t.course || "", "대학": t.collage || "", "캠퍼스": t.campus || "", "학과": t.dept || "", "전공": t.major || "", "계열": t.cate || "",
-      "검토위원": rev.name || "", "상태": status, "등록일시": updatedAt
-    };
-
-    let hasAny = false, hasFail = false;
-    itemRows
-      .filter(it => it.course === t.course)
-      .forEach(it => {
-        const r = resultByItem[it.id];
-        const result = r ? (r.result || "") : "";
-        const opinion = r ? (r.opinion || "") : "";
-        if (result) { hasAny = true; if (result === "부적합") hasFail = true; }
-        row[colLabel(it)] = result;
-        row[`${colLabel(it)} 의견`] = opinion;
-      });
-
-    row["최종검토결과"] = hasFail ? "부적합" : (hasAny ? "적합" : "미정");
-    return row;
+    const dataRow = [t.course || "", t.collage || "", t.campus || "", t.dept || "", t.major || "", t.cate || "", rev.name || "", status, updatedAt];
+    itemRows.forEach(it => {
+      const r = resultByItem[it.id];
+      dataRow.push(r ? (r.result || "") : "");
+      dataRow.push(r ? (r.opinion || "") : "");
+    });
+    dataRow.push((sub && sub.finalResult) || "미정");
+    dataRow.push((sub && sub.finalOpinion) || "");
+    aoa.push(dataRow);
   });
 
-  exportToExcel(excelRows, `검토결과_${filter || "전체"}.xlsx`);
+  const colWidths = singleHeaders.map(() => 12)
+    .concat(itemRows.flatMap(() => [10, 24]))
+    .concat([10, 24]);
+
+  exportToExcelWithMerges(aoa, merges, `${filter}_검토결과.xlsx`, colWidths);
 });
 
 // ---- 검토의견서 보기 ----

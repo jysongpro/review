@@ -65,6 +65,16 @@ export function exportToExcel(rows, filename) {
   XLSX.writeFile(wb, filename);
 }
 
+// ---- 병합 셀이 포함된 엑셀 다운로드 (aoa: 배열의 배열, merges: [{s:{r,c},e:{r,c}}, ...]) ----
+export function exportToExcelWithMerges(aoa, merges, filename, colWidths) {
+  const ws = XLSX.utils.aoa_to_sheet(aoa);
+  ws["!merges"] = merges;
+  if (colWidths) ws["!cols"] = colWidths.map(w => ({ wch: w }));
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "data");
+  XLSX.writeFile(wb, filename);
+}
+
 // ---- 랜덤 6자리 인증번호 ----
 export function genCode() {
   return String(Math.floor(100000 + Math.random() * 900000));
