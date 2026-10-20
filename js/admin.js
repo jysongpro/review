@@ -621,12 +621,15 @@ window.__viewOpinion = async (targetId, reviewerId) => {
     `<thead><tr>${infoCols.map(c => `<th style="background:#e6effa;color:#0f2c5c;border:1px solid #dde5f0;padding:8px;">${c[0]}</th>`).join("")}</tr></thead>
      <tbody><tr>${infoCols.map(c => `<td style="border:1px solid #dde5f0;padding:8px;text-align:center;">${c[1]||"-"}</td>`).join("")}</tr></tbody>`;
 
+  const sub = _resultsContext.submissions[key] || {};
   const reviewerCols = [
     ["검토위원", rev.name || ""],
     ["소속대학", rev.univ || ""],
     ["소속캠퍼스", rev.campus || ""],
     ["휴대폰번호", rev.phone || reviewerId || ""],
-    ["이메일", rev.email || ""]
+    ["이메일", rev.email || ""],
+    ["최종결과", sub.finalResult || "미정"],
+    ["최종검토의견", sub.finalOpinion || "-"]
   ];
   $("opinionReviewerInfoTable").innerHTML =
     `<thead><tr>${reviewerCols.map(c => `<th style="background:#e6effa;color:#0f2c5c;border:1px solid #dde5f0;padding:8px;">${c[0]}</th>`).join("")}</tr></thead>
