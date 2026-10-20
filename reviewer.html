@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>검토위원 - 교육운영계획서 검토 지원도구</title>
-<link rel="stylesheet" href="css/style.css?v=1.7.6">
+<link rel="stylesheet" href="css/style.css?v=1.8.0">
 </head>
 <body>
 <header class="topbar">
@@ -33,34 +33,53 @@
   </div>
 
   <div class="card">
-    <h2>배정된 검토목록</h2>
+    <h2>배정된 교육운영계획서 검토 목록</h2>
     <table id="assignedTable">
-      <thead><tr><th>과정구분</th><th>캠퍼스</th><th>학과</th><th>전공과정</th><th>진행상태</th><th>선택</th></tr></thead>
+      <thead><tr><th>대학</th><th>캠퍼스</th><th>학과</th><th>전공</th><th>계열</th><th>진행상태</th><th>선택</th></tr></thead>
       <tbody></tbody>
     </table>
   </div>
 
   <div class="card" id="reviewPanel" style="display:none;">
-    <h2 id="reviewPanelTitle">검토 입력</h2>
+    <h2 id="reviewPanelTitle">교육운영계획서 검토 하기</h2>
+    <p id="reviewPanelInfo" style="font-size:13px;color:#5a6775;background:#f4f7fb;border:1px solid #dde5f0;border-radius:8px;padding:10px 14px;line-height:1.7;"></p>
     <p><a id="pdfLink" href="#" target="_blank" class="btn secondary small">운영계획서 PDF 다운로드</a></p>
+    <p id="submittedNotice" style="display:none;color:#c62828;font-weight:700;font-size:13px;margin:10px 0 0;">
+      ✔ 최종 제출이 완료되어 더 이상 수정할 수 없습니다.
+    </p>
 
     <h3 style="font-size:15px;color:#0f2c5c;margin:18px 0 8px;">1. 교과과정개편 세부기준 준수 여부</h3>
     <table id="reviewItemsTablePart1">
-      <thead><tr><th style="width:60px;">순번</th><th>검토분야</th><th>검토문항</th><th>검토결과</th><th>검토의견</th></tr></thead>
+      <colgroup>
+        <col style="width:60px;">
+        <col style="width:40%;">
+        <col style="width:12%;">
+        <col style="width:40%;">
+      </colgroup>
+      <thead><tr><th>순번</th><th>검토문항</th><th>검토결과</th><th>검토의견</th></tr></thead>
       <tbody></tbody>
     </table>
 
     <h3 style="font-size:15px;color:#0f2c5c;margin:22px 0 8px;">2. 교육운영계획서 세부내용 검토</h3>
     <table id="reviewItemsTablePart2">
-      <thead><tr><th style="width:60px;">순번</th><th>검토분야</th><th>검토문항</th><th>검토결과</th><th>검토의견</th></tr></thead>
+      <colgroup>
+        <col style="width:60px;">
+        <col style="width:40%;">
+        <col style="width:12%;">
+        <col style="width:40%;">
+      </colgroup>
+      <thead><tr><th>순번</th><th>검토문항</th><th>검토결과</th><th>검토의견</th></tr></thead>
       <tbody></tbody>
     </table>
 
-    <button class="btn" id="saveReviewBtn" style="margin-top:14px;">저장</button>
+    <div id="reviewActionBtns" style="margin-top:14px;">
+      <button class="btn" id="saveReviewBtn">저장</button>
+      <button class="btn danger" id="submitFinalBtn">최종제출</button>
+    </div>
     <span id="saveMsg" class="msg"></span>
   </div>
 </div>
 
-<script type="module" src="js/reviewer.js?v=1.7.5"></script>
+<script type="module" src="js/reviewer.js?v=1.8.0"></script>
 </body>
 </html>

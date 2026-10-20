@@ -244,6 +244,7 @@ $("uploadTargetBtn").addEventListener("click", async () => {
       const curri = row["curri"] || "";
       await setDoc(doc(db, "targets", no), {
         no,
+        univ: row["대학"] || row["univ"] || "한국폴리텍대학",
         collage: row["collage"] || "",
         campus: row["campus"] || "",
         dept: row["dept"] || "",
