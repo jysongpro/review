@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>검토결과조회 - 교육운영계획서 검토 지원도구</title>
-<link rel="stylesheet" href="css/style.css?v=1.19.0">
+<link rel="stylesheet" href="css/style.css?v=1.20.0">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
   .modal-overlay{ display:none; position:fixed; inset:0; z-index:1000; background:rgba(10,20,40,.55);
@@ -21,13 +21,62 @@
   .info-table th, .info-table td{ border:1px solid #dde5f0; padding:8px; }
   .info-table th{ background:#e6effa; color:#0f2c5c; }
   .info-table td{ text-align:center; }
+  .print-header{ display:none; }
+
+  /* ===================== 인쇄(출력) 전용 디자인 ===================== */
   @media print{
+    @page{ size:A4; margin:16mm 14mm; }
+    html, body{ background:#fff !important; }
     body > *{ display:none !important; }
-    #opinionModal{ display:block !important; position:static !important; background:none !important; padding:0 !important; }
-    #opinionModal .modal-box{ box-shadow:none !important; max-height:none !important; max-width:none !important; }
-    #opinionModal .modal-body{ padding:0 24px !important; }
+
+    /* ---- 조회 목록 출력 ---- */
+    #resultCard{ display:block !important; }
+    #resultCard.printing{ display:block !important; }
+    body.print-list #resultCard{ display:block !important; box-shadow:none !important; border:none !important; padding:0 !important; }
+    body.print-list #resultCard > h2{ display:none !important; }
+    body.print-list #resultCard .print-header{ display:block !important; }
+    body.print-list #resultCard .row{ display:none !important; }
+
+    /* ---- 검토의견서 모달 출력 ---- */
+    body.print-modal #opinionModal{ display:block !important; position:static !important; background:none !important; padding:0 !important; }
+
+    #opinionModal .modal-box, #resultCard{
+      box-shadow:none !important; max-height:none !important; max-width:none !important; width:auto !important;
+      border-radius:0 !important; background:#fff !important;
+    }
+    #opinionModal .modal-head{ position:static !important; border-bottom:none !important; padding:0 !important; }
+    #opinionModal .modal-body{ padding:0 !important; }
+
     .no-print{ display:none !important; }
+
+    .print-header{ display:block; text-align:center; margin-bottom:14px; padding-bottom:10px; border-bottom:2.5px solid #0f2c5c; }
+    .print-header .pf-org{ font-size:11px; color:#5a6b85; letter-spacing:.5px; margin-bottom:2px; }
+    .print-header .pf-title{ font-size:19px; font-weight:700; color:#0f2c5c; margin:2px 0 6px; }
+    .print-header .pf-meta{ font-size:10.5px; color:#555; }
+
+    .print-sec-title{ font-size:12.5px !important; font-weight:700; color:#0f2c5c !important; margin:14px 0 6px !important;
+      padding-left:8px; border-left:4px solid #0f2c5c; break-after:avoid; }
+
+    .info-table, #resultTable, #opinionTablePart1, #opinionTablePart2{
+      width:100%; border-collapse:collapse; font-size:10.5px; margin-bottom:12px; break-inside:auto;
+    }
+    .info-table th, .info-table td,
+    #resultTable th, #resultTable td,
+    #opinionTablePart1 th, #opinionTablePart1 td,
+    #opinionTablePart2 th, #opinionTablePart2 td{
+      border:1px solid #9aa7bd !important; padding:6px 7px !important; color:#111 !important;
+    }
+    .info-table th, #resultTable th, #opinionTablePart1 th, #opinionTablePart2 th{
+      background:#e9eef7 !important; color:#0f2c5c !important; font-weight:700; -webkit-print-color-adjust:exact; print-color-adjust:exact;
+    }
+    #resultTable tr, #opinionTablePart1 tr, #opinionTablePart2 tr{ break-inside:avoid; }
+    .badge{ -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+    #resultTable td:last-child{ display:none !important; }
+    #resultTable th:last-child{ display:none !important; }
+
+    .print-footer{ display:block !important; margin-top:16px; text-align:center; font-size:9.5px; color:#8a93a3; }
   }
+  .print-footer{ display:none; }
 </style>
 </head>
 <body>
@@ -49,6 +98,11 @@
   </div>
 
   <div class="card" id="resultCard" style="display:none;">
+    <div class="print-header" id="listPrintHeader">
+      <div class="pf-org">학교법인 한국폴리텍대학 AI혁신부</div>
+      <div class="pf-title">2027학년도 교육운영계획서 검토결과</div>
+      <div class="pf-meta" id="listPrintMeta"></div>
+    </div>
     <h2>조회 결과</h2>
     <div class="row" style="justify-content:flex-end;">
       <button class="btn secondary small" id="exportBtn">엑셀 저장</button>
@@ -72,24 +126,30 @@
       </div>
     </div>
     <div class="modal-body">
-      <h3 style="font-size:15px;color:#0f2c5c;margin:0 0 8px;">2027학년도 교육운영계획서 정보</h3>
+      <div class="print-header" id="opinionPrintHeader">
+        <div class="pf-org">학교법인 한국폴리텍대학 AI혁신부</div>
+        <div class="pf-title">교육운영계획서 검토의견서</div>
+        <div class="pf-meta" id="opinionPrintMeta"></div>
+      </div>
+      <h3 class="print-sec-title" style="font-size:15px;color:#0f2c5c;margin:0 0 8px;">2027학년도 교육운영계획서 정보</h3>
       <table class="info-table" id="opinionTargetInfoTable"></table>
 
-      <h3 style="font-size:15px;color:#0f2c5c;margin:0 0 8px;">검토위원 정보</h3>
+      <h3 class="print-sec-title" style="font-size:15px;color:#0f2c5c;margin:0 0 8px;">검토위원 정보</h3>
       <table class="info-table" id="opinionReviewerInfoTable"></table>
 
-      <h3 style="font-size:15px;color:#0f2c5c;margin:0 0 8px;">최종결과</h3>
+      <h3 class="print-sec-title" style="font-size:15px;color:#0f2c5c;margin:0 0 8px;">최종결과</h3>
       <table class="info-table" id="opinionFinalTable"></table>
 
-      <h3 style="font-size:14px;color:#0f2c5c;margin:14px 0 8px;">1. 교과과정개편 세부기준 준수 여부</h3>
+      <h3 class="print-sec-title" style="font-size:14px;color:#0f2c5c;margin:14px 0 8px;">1. 교과과정개편 세부기준 준수 여부</h3>
       <table id="opinionTablePart1"><thead><tr><th style="width:60px;">순번</th><th>검토문항</th><th style="width:80px;">결과</th><th>검토의견</th></tr></thead><tbody></tbody></table>
 
-      <h3 style="font-size:14px;color:#0f2c5c;margin:18px 0 8px;">2. 교육운영계획서 세부내용 검토</h3>
+      <h3 class="print-sec-title" style="font-size:14px;color:#0f2c5c;margin:18px 0 8px;">2. 교육운영계획서 세부내용 검토</h3>
       <table id="opinionTablePart2"><thead><tr><th style="width:60px;">순번</th><th>검토문항</th><th style="width:80px;">결과</th><th>검토의견</th></tr></thead><tbody></tbody></table>
+      <div class="print-footer">학교법인 한국폴리텍대학 AI혁신부 · 2027학년도 교육운영계획서 검토결과조회</div>
     </div>
   </div>
 </div>
 
-<script type="module" src="js/result.js?v=1.19.0"></script>
+<script type="module" src="js/result.js?v=1.20.0"></script>
 </body>
 </html>
