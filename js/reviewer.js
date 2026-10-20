@@ -128,6 +128,29 @@ async function loadAssigned() {
 
 async function submitFinal(targetId) {
   const r = getReviewerSession();
+
+  // 최종제출 전 검증: 해당 검토대상의 모든 검토항목(1·2번 파트 전체)에 검토의견이 저장되어 있어야 함
+  const tSnap = await getDoc(doc(db, "targets", targetId));
+  const t = tSnap.exists() ? tSnap.data() : {};
+  const itemsSnap = await getDocs(query(collection(db, "reviewItems"), where("course", "==", t.course)));
+  const resultsSnap = await getDocs(query(
+    collection(db, "reviewResults"), where("targetId", "==", targetId), where("reviewerId", "==", r.id)
+  ));
+  const opinionByItem = {};
+  resultsSnap.forEach(d => { opinionByItem[d.data().itemId] = (d.data().opinion || "").trim(); });
+
+  const missing = [];
+  itemsSnap.forEach(d => {
+    const it = d.data();
+    if (!opinionByItem[d.id]) {
+      missing.push(it.subNo ? `${it.mainNo||""}-${it.subNo}` : `${it.mainNo||""}`);
+    }
+  });
+  if (missing.length) {
+    alert(`모든 검토항목의 검토의견을 입력해야 최종제출할 수 있습니다.\n(미입력 항목: ${missing.join(", ")})\n\n"검토하기"를 눌러 먼저 저장해 주세요.`);
+    return;
+  }
+
   if (!confirm("최종 제출하면 더 이상 수정할 수 없습니다. 제출하시겠습니까?")) return;
   await setDoc(doc(db, "reviewSubmissions", submissionId(targetId, r.id)), {
     targetId, reviewerId: r.id, status: "submitted", submittedAt: nowStr()
@@ -245,11 +268,11 @@ async function openReviewPanel(targetId) {
   $("saveMsg").textContent = "";
 
   $("saveReviewBtn").onclick = async () => {
-    const trRows = [...tbody1.querySelectorAll("tr"), ...tbody2.querySelectorAll("tr")];
+    const trRows = [...tbody1.querySelectorAll("tr"), ...tbody2.querySelectorAll("tr")].filter(row => row.dataset.itemId);
+
     let savedAny = false;
     for (const row of trRows) {
       const itemId = row.dataset.itemId;
-      if (!itemId) continue;
       const result = row.querySelector(".resultSelect").value;
       const opinion = row.querySelector(".opinionInput").value.slice(0, 50);
       if (!result && !opinion) continue;
