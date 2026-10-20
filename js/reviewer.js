@@ -152,7 +152,7 @@ async function openReviewPanel(targetId) {
     ["캠퍼스", t.campus || ""],
     ["학과", t.dept || ""],
     ["전공", t.major || ""],
-    ["분야", t.cate || ""],
+    ["계열", t.cate || ""],
     ["기간", t.per || ""],
     ["주야", t.dn || ""]
   ];
@@ -196,7 +196,7 @@ async function openReviewPanel(targetId) {
           <option value="부적합" ${ex && ex.result==="부적합" ? "selected":""}>부적합</option>
         </select>
       </td>
-      <td><input type="text" class="opinionInput" style="width:100%;" ${isSubmitted ? "disabled" : ""} value="${ex ? (ex.opinion||"").replace(/"/g,'&quot;') : ""}"></td>
+      <td><textarea class="opinionInput" maxlength="50" rows="2" style="width:100%;resize:vertical;white-space:pre-wrap;word-break:break-all;" ${isSubmitted ? "disabled" : ""}>${ex ? (ex.opinion||"") : ""}</textarea></td>
     `;
     return tr;
   }
@@ -222,7 +222,7 @@ async function openReviewPanel(targetId) {
       const itemId = row.dataset.itemId;
       if (!itemId) continue;
       const result = row.querySelector(".resultSelect").value;
-      const opinion = row.querySelector(".opinionInput").value;
+      const opinion = row.querySelector(".opinionInput").value.slice(0, 50);
       if (!result && !opinion) continue;
       savedAny = true;
       const ex = existing[itemId];
