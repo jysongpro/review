@@ -393,7 +393,6 @@ window.__editItem = async (id) => {
   await updateDoc(doc(db, "reviewItems", id), { question: question.trim() });
   loadItems();
 };
-};
 
 window.__deleteItem = async (id) => {
   if (!confirm("삭제하시겠습니까?")) return;
