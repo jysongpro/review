@@ -477,8 +477,75 @@ async function loadResults() {
   }
 }
 $("resultCourseFilter").addEventListener("change", loadResults);
+
+// ---- 엑셀 다운로드: 과정의 전체 검토문항을 "번호.문항"(결과) + "번호.문항 의견"(의견) 열로 펼치고,
+//      마지막 열에 최종검토결과(부적합이 하나라도 있으면 부적합, 전부 적합이면 적합, 그 외 미정)을 추가 ----
 $("exportResultsBtn").addEventListener("click", () => {
-  exportToExcel(_allResultsCache, `검토결과_${$("resultCourseFilter").value || "전체"}.xlsx`);
+  const { targets, reviewers, items, resultsByKey, submissions } = _resultsContext;
+  const filter = $("resultCourseFilter").value;
+
+  const rows = [];
+  Object.values(targets).forEach(t => {
+    if (filter && t.course !== filter) return;
+    const phone = normalizePhone(t.reviewerAssigned);
+    if (!phone) return;
+    const rev = reviewers[phone];
+    if (!rev) return;
+    rows.push({ t, rev });
+  });
+  rows.sort((a, b) => (Number(a.t.no)||0) - (Number(b.t.no)||0));
+
+  if (!rows.length) return alert("내려받을 검토결과가 없습니다.");
+
+  const coursesInRows = [...new Set(rows.map(r => r.t.course))];
+  const itemRows = Object.values(items)
+    .filter(it => coursesInRows.includes(it.course))
+    .sort((a, b) =>
+      (a.course || "").localeCompare(b.course || "") ||
+      (a.mainNo||0) - (b.mainNo||0) || (a.subNo||0) - (b.subNo||0)
+    );
+  const multiCourse = coursesInRows.length > 1;
+
+  function itemNo(it) { return it.subNo ? `${it.mainNo||""}-${it.subNo}` : `${it.mainNo||""}`; }
+  function colLabel(it) {
+    const base = `${itemNo(it)}.${it.question || ""}`;
+    return multiCourse ? `[${it.course}] ${base}` : base;
+  }
+
+  const excelRows = rows.map(({ t, rev }) => {
+    const key = `${t.id}_${normalizePhone(t.reviewerAssigned)}`;
+    const sub = submissions[key];
+    const resultList = resultsByKey[key] || [];
+    const resultByItem = {};
+    resultList.forEach(r => resultByItem[r.itemId] = r);
+
+    let status = "미작성";
+    if (sub && sub.status === "submitted") status = "제출완료";
+    else if (resultList.length || (sub && sub.status === "draft")) status = "작성중";
+    const updatedAt = (sub && (sub.submittedAt || sub.updatedAt)) || "";
+
+    const row = {
+      "과정": t.course || "", "대학": t.collage || "", "캠퍼스": t.campus || "", "학과": t.dept || "", "전공": t.major || "", "계열": t.cate || "",
+      "검토위원": rev.name || "", "상태": status, "등록일시": updatedAt
+    };
+
+    let hasAny = false, hasFail = false;
+    itemRows
+      .filter(it => it.course === t.course)
+      .forEach(it => {
+        const r = resultByItem[it.id];
+        const result = r ? (r.result || "") : "";
+        const opinion = r ? (r.opinion || "") : "";
+        if (result) { hasAny = true; if (result === "부적합") hasFail = true; }
+        row[colLabel(it)] = result;
+        row[`${colLabel(it)} 의견`] = opinion;
+      });
+
+    row["최종검토결과"] = hasFail ? "부적합" : (hasAny ? "적합" : "미정");
+    return row;
+  });
+
+  exportToExcel(excelRows, `검토결과_${filter || "전체"}.xlsx`);
 });
 
 // ---- 검토의견서 보기 ----
