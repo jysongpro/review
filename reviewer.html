@@ -4,7 +4,35 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>검토위원 - 교육운영계획서 검토 지원도구</title>
-<link rel="stylesheet" href="css/style.css?v=1.8.0">
+<link rel="stylesheet" href="css/style.css?v=1.9.0">
+<style>
+  .modal-overlay{
+    display:none; position:fixed; inset:0; z-index:1000;
+    background:rgba(10,20,40,.55);
+    align-items:flex-start; justify-content:center;
+    padding:30px 16px; overflow-y:auto;
+  }
+  .modal-overlay.open{display:flex;}
+  .modal-box{
+    background:#fff; border-radius:14px; max-width:1000px; width:100%;
+    box-shadow:0 20px 60px rgba(0,0,0,.35);
+    max-height:calc(100vh - 60px); overflow-y:auto;
+  }
+  .modal-head{
+    display:flex; align-items:center; justify-content:space-between;
+    padding:18px 24px; border-bottom:1px solid #dde5f0;
+    position:sticky; top:0; background:#fff; border-radius:14px 14px 0 0; z-index:2;
+  }
+  .modal-head h2{margin:0;font-size:17px;color:#0f2c5c;}
+  .modal-close{
+    border:none;background:#eef2f8;color:#334;
+    width:32px;height:32px;border-radius:50%;cursor:pointer;font-size:16px;
+  }
+  .modal-body{padding:20px 24px 26px;}
+  .info-table{width:100%;border-collapse:collapse;margin-bottom:16px;}
+  .info-table th,.info-table td{border:1px solid #dde5f0;padding:9px 10px;font-size:13px;text-align:center;}
+  .info-table th{background:#e6effa;color:#0f2c5c;font-weight:700;white-space:nowrap;}
+</style>
 </head>
 <body>
 <header class="topbar">
@@ -35,51 +63,59 @@
   <div class="card">
     <h2>배정된 교육운영계획서 검토 목록</h2>
     <table id="assignedTable">
-      <thead><tr><th>대학</th><th>캠퍼스</th><th>학과</th><th>전공</th><th>계열</th><th>진행상태</th><th>선택</th></tr></thead>
+      <thead><tr><th>과정</th><th>대학</th><th>캠퍼스</th><th>학과</th><th>전공</th><th>계열</th><th>진행상태</th><th>검토하기</th></tr></thead>
       <tbody></tbody>
     </table>
-  </div>
-
-  <div class="card" id="reviewPanel" style="display:none;">
-    <h2 id="reviewPanelTitle">교육운영계획서 검토 하기</h2>
-    <p id="reviewPanelInfo" style="font-size:13px;color:#5a6775;background:#f4f7fb;border:1px solid #dde5f0;border-radius:8px;padding:10px 14px;line-height:1.7;"></p>
-    <p><a id="pdfLink" href="#" target="_blank" class="btn secondary small">운영계획서 PDF 다운로드</a></p>
-    <p id="submittedNotice" style="display:none;color:#c62828;font-weight:700;font-size:13px;margin:10px 0 0;">
-      ✔ 최종 제출이 완료되어 더 이상 수정할 수 없습니다.
-    </p>
-
-    <h3 style="font-size:15px;color:#0f2c5c;margin:18px 0 8px;">1. 교과과정개편 세부기준 준수 여부</h3>
-    <table id="reviewItemsTablePart1">
-      <colgroup>
-        <col style="width:60px;">
-        <col style="width:40%;">
-        <col style="width:12%;">
-        <col style="width:40%;">
-      </colgroup>
-      <thead><tr><th>순번</th><th>검토문항</th><th>검토결과</th><th>검토의견</th></tr></thead>
-      <tbody></tbody>
-    </table>
-
-    <h3 style="font-size:15px;color:#0f2c5c;margin:22px 0 8px;">2. 교육운영계획서 세부내용 검토</h3>
-    <table id="reviewItemsTablePart2">
-      <colgroup>
-        <col style="width:60px;">
-        <col style="width:40%;">
-        <col style="width:12%;">
-        <col style="width:40%;">
-      </colgroup>
-      <thead><tr><th>순번</th><th>검토문항</th><th>검토결과</th><th>검토의견</th></tr></thead>
-      <tbody></tbody>
-    </table>
-
-    <div id="reviewActionBtns" style="margin-top:14px;">
-      <button class="btn" id="saveReviewBtn">저장</button>
-      <button class="btn danger" id="submitFinalBtn">최종제출</button>
-    </div>
-    <span id="saveMsg" class="msg"></span>
   </div>
 </div>
 
-<script type="module" src="js/reviewer.js?v=1.8.0"></script>
+<!-- 교육운영계획서 검토하기: 별도 창(모달)으로 표시 -->
+<div class="modal-overlay" id="reviewModal">
+  <div class="modal-box">
+    <div class="modal-head">
+      <h2>교육운영계획서 검토 하기</h2>
+      <button class="modal-close" id="modalCloseBtn">✕</button>
+    </div>
+    <div class="modal-body">
+      <table class="info-table" id="reviewInfoTable"></table>
+
+      <p><a id="pdfLink" href="#" target="_blank" class="btn secondary small">운영계획서 PDF 다운로드</a></p>
+      <p id="submittedNotice" style="display:none;color:#c62828;font-weight:700;font-size:13px;margin:10px 0 0;">
+        ✔ 최종 제출이 완료되어 더 이상 수정할 수 없습니다.
+      </p>
+
+      <h3 style="font-size:15px;color:#0f2c5c;margin:18px 0 8px;">1. 교과과정개편 세부기준 준수 여부</h3>
+      <table id="reviewItemsTablePart1">
+        <colgroup>
+          <col style="width:60px;">
+          <col style="width:40%;">
+          <col style="width:12%;">
+          <col style="width:40%;">
+        </colgroup>
+        <thead><tr><th>순번</th><th>검토문항</th><th>검토결과</th><th>검토의견</th></tr></thead>
+        <tbody></tbody>
+      </table>
+
+      <h3 style="font-size:15px;color:#0f2c5c;margin:22px 0 8px;">2. 교육운영계획서 세부내용 검토</h3>
+      <table id="reviewItemsTablePart2">
+        <colgroup>
+          <col style="width:60px;">
+          <col style="width:40%;">
+          <col style="width:12%;">
+          <col style="width:40%;">
+        </colgroup>
+        <thead><tr><th>순번</th><th>검토문항</th><th>검토결과</th><th>검토의견</th></tr></thead>
+        <tbody></tbody>
+      </table>
+
+      <div id="reviewActionBtns" style="margin-top:14px;">
+        <button class="btn" id="saveReviewBtn">저장</button>
+      </div>
+      <span id="saveMsg" class="msg"></span>
+    </div>
+  </div>
+</div>
+
+<script type="module" src="js/reviewer.js?v=1.9.0"></script>
 </body>
 </html>

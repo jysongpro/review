@@ -15,7 +15,7 @@ const $ = (id) => document.getElementById(id);
 //
 // 진행상태
 // - 미작성: 저장된 검토결과가 하나도 없음
-// - 작성중: 저장(임시) 버튼으로 결과를 1건 이상 저장했지만 최종제출은 안 함
+// - 작성중: 저장 버튼으로 결과를 1건 이상 저장했지만 최종제출은 안 함 (목록의 진행상태 칸에서 최종제출 가능)
 // - 최종제출완료: reviewSubmissions/{targetId_reviewerId} 문서가 status="submitted"
 //   → 이후에는 해당 검토대상의 입력이 모두 잠겨 수정 불가
 // =========================================================================
@@ -27,7 +27,6 @@ function normalizePhone(v) {
 async function findReviewerByPhone(phoneDigits) {
   const snap = await getDoc(doc(db, "reviewers", phoneDigits));
   if (snap.exists()) return { id: snap.id, data: () => snap.data() };
-  // 구 버전 데이터(문서 ID가 휴대폰번호가 아닌 경우)를 위한 호환 검색
   const all = await getDocs(collection(db, "reviewers"));
   return all.docs.find(d => normalizePhone(d.data().phone) === phoneDigits);
 }
@@ -90,54 +89,76 @@ async function loadAssigned() {
   targetsSnap.forEach(d => {
     const t = d.data();
     const assigned = (t.reviewerAssigned || "");
-    // 담당검토위원 컬럼은 휴대폰번호(ID)로 저장되며, 구버전(이름) 데이터도 호환 매칭
     const isMine = assigned && (normalizePhone(assigned) === normalizePhone(r.phone) || assigned === r.name);
     if (!isMine) return;
     count++;
 
-    let statusBadge;
-    if (mySubmittedTargetIds.has(d.id)) {
-      statusBadge = '<span class="badge ok">최종제출완료</span>';
-    } else if (myResultTargetIds.has(d.id)) {
-      statusBadge = '<span class="badge pending" style="background:#fff3cd;color:#8a6d00;">작성중</span>';
+    const isSubmitted = mySubmittedTargetIds.has(d.id);
+    const isDraft = !isSubmitted && myResultTargetIds.has(d.id);
+
+    let statusCell;
+    if (isSubmitted) {
+      statusCell = '<span class="badge ok">최종제출완료</span>';
+    } else if (isDraft) {
+      statusCell = `<span class="badge pending" style="background:#fff3cd;color:#8a6d00;">작성중</span>
+        <button class="btn small danger" style="margin-left:6px;" data-final-id="${d.id}">최종제출</button>`;
     } else {
-      statusBadge = '<span class="badge pending">미작성</span>';
+      statusCell = '<span class="badge pending">미작성</span>';
     }
 
     const tr = document.createElement("tr");
-    tr.innerHTML = `<td>${t.univ||""}</td><td>${t.campus||""}</td><td>${t.dept||""}</td><td>${t.major||""}</td><td>${t.collage||""}</td>
-      <td>${statusBadge}</td>
-      <td><button class="btn small" data-id="${d.id}">선택</button></td>`;
+    tr.innerHTML = `<td>${t.curri||t.course||""}</td><td>${t.collage||""}</td><td>${t.campus||""}</td><td>${t.dept||""}</td><td>${t.major||""}</td><td>${t.cate||""}</td>
+      <td>${statusCell}</td>
+      <td><button class="btn small" data-id="${d.id}">검토하기</button></td>`;
     tbody.appendChild(tr);
   });
   if (count === 0) {
-    tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;color:#999;">배정된 교육운영계획서 검토 목록이 없습니다.</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;color:#999;">배정된 교육운영계획서 검토 목록이 없습니다.</td></tr>`;
   }
   tbody.querySelectorAll("button[data-id]").forEach(btn => {
     btn.addEventListener("click", () => openReviewPanel(btn.dataset.id));
   });
+  tbody.querySelectorAll("button[data-final-id]").forEach(btn => {
+    btn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      submitFinal(btn.dataset.finalId);
+    });
+  });
 }
+
+async function submitFinal(targetId) {
+  const r = getReviewerSession();
+  if (!confirm("최종 제출하면 더 이상 수정할 수 없습니다. 제출하시겠습니까?")) return;
+  await setDoc(doc(db, "reviewSubmissions", submissionId(targetId, r.id)), {
+    targetId, reviewerId: r.id, status: "submitted", submittedAt: nowStr()
+  }, { merge: true });
+  loadAssigned();
+}
+
+function openModal() { $("reviewModal").classList.add("open"); }
+function closeModal() { $("reviewModal").classList.remove("open"); }
+$("modalCloseBtn").addEventListener("click", closeModal);
+$("reviewModal").addEventListener("click", (e) => { if (e.target.id === "reviewModal") closeModal(); });
 
 async function openReviewPanel(targetId) {
   const r = getReviewerSession();
   const tSnap = await getDoc(doc(db, "targets", targetId));
   const t = tSnap.data();
-  $("reviewPanel").style.display = "block";
-  $("reviewPanelTitle").textContent = `교육운영계획서 검토 하기`;
 
-  // 검토목록에 저장된 모든 정보를 상세히 표기
-  const infoParts = [
-    t.univ ? `<b>대학</b> ${t.univ}` : "",
-    t.campus ? `<b>캠퍼스</b> ${t.campus}` : "",
-    t.dept ? `<b>학과</b> ${t.dept}` : "",
-    t.major ? `<b>전공</b> ${t.major}` : "",
-    t.collage ? `<b>계열</b> ${t.collage}` : "",
-    t.course ? `<b>과정구분</b> ${t.course}` : "",
-    t.cate ? `<b>분야</b> ${t.cate}` : "",
-    t.per ? `<b>기간</b> ${t.per}` : "",
-    t.dn ? `<b>주야</b> ${t.dn}` : ""
-  ].filter(Boolean);
-  $("reviewPanelInfo").innerHTML = infoParts.join(" &nbsp;|&nbsp; ");
+  // 검토 대상 정보를 2행 표(헤더행 + 값행)로 표시
+  const infoCols = [
+    ["과정", t.curri || t.course || ""],
+    ["대학", t.collage || ""],
+    ["캠퍼스", t.campus || ""],
+    ["학과", t.dept || ""],
+    ["전공", t.major || ""],
+    ["분야", t.cate || ""],
+    ["기간", t.per || ""],
+    ["주야", t.dn || ""]
+  ];
+  $("reviewInfoTable").innerHTML =
+    `<thead><tr>${infoCols.map(c => `<th>${c[0]}</th>`).join("")}</tr></thead>
+     <tbody><tr>${infoCols.map(c => `<td>${c[1] || "-"}</td>`).join("")}</tr></tbody>`;
 
   $("pdfLink").href = t.pdfUrl || "#";
   $("pdfLink").textContent = t.pdfUrl ? "운영계획서 PDF 다운로드" : "업로드된 PDF가 없습니다";
@@ -192,6 +213,7 @@ async function openReviewPanel(targetId) {
 
   $("submittedNotice").style.display = isSubmitted ? "block" : "none";
   $("reviewActionBtns").style.display = isSubmitted ? "none" : "block";
+  $("saveMsg").textContent = "";
 
   $("saveReviewBtn").onclick = async () => {
     const trRows = [...tbody1.querySelectorAll("tr"), ...tbody2.querySelectorAll("tr")];
@@ -213,7 +235,6 @@ async function openReviewPanel(targetId) {
       }
     }
     if (savedAny) {
-      // 저장 버튼을 눌렀다는 것은 "작성중" 상태로 진입했다는 뜻이므로 표시용 문서를 남김
       await setDoc(doc(db, "reviewSubmissions", submissionId(targetId, r.id)), {
         targetId, reviewerId: r.id, status: "draft", updatedAt: nowStr()
       }, { merge: true });
@@ -223,13 +244,5 @@ async function openReviewPanel(targetId) {
     openReviewPanel(targetId);
   };
 
-  $("submitFinalBtn").onclick = async () => {
-    if (!confirm("최종 제출하면 더 이상 수정할 수 없습니다. 제출하시겠습니까?")) return;
-    await setDoc(doc(db, "reviewSubmissions", submissionId(targetId, r.id)), {
-      targetId, reviewerId: r.id, status: "submitted", submittedAt: nowStr()
-    }, { merge: true });
-    toast($("saveMsg"), "최종 제출이 완료되었습니다.");
-    loadAssigned();
-    openReviewPanel(targetId);
-  };
+  openModal();
 }
