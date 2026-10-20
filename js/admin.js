@@ -197,7 +197,8 @@ async function loadReviewerAssignOverview() {
 
 // ===================== 검토대상 운영계획서 =====================
 // targets 컬렉션 문서 ID = 엑셀의 No 값(문자열화). 동일 No로 재업로드하면 덮어씁니다.
-// PDF 원본은 서버의 /Files/{filename}에 미리 위치해야 하며, pdfUrl은 이 경로로 자동 계산됩니다.
+// PDF 원본은 저장소 루트 기준 상대경로 Files/{filename}에 미리 위치해야 하며, pdfUrl은 이 경로로 자동 계산됩니다.
+// (주의: 사이트가 하위 폴더(예: /review/)에서 서비스되므로 절대경로 "/Files/..."를 쓰면 안됨 — 404 원인)
 let _allTargetsCache = [];
 
 async function loadTargets() {
@@ -255,7 +256,7 @@ $("uploadTargetBtn").addEventListener("click", async () => {
         per: row["per"] || "",
         dn: row["dn"] || "",
         filename,
-        pdfUrl: filename ? `/Files/${filename}` : "",
+        pdfUrl: filename ? `Files/${filename}` : "",
         reviewerAssigned: row["담당검토위원"] ? String(row["담당검토위원"]).trim() : ""
       }, { merge: true });
       count++;

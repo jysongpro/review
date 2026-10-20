@@ -160,8 +160,18 @@ async function openReviewPanel(targetId) {
     `<thead><tr>${infoCols.map(c => `<th>${c[0]}</th>`).join("")}</tr></thead>
      <tbody><tr>${infoCols.map(c => `<td>${c[1] || "-"}</td>`).join("")}</tr></tbody>`;
 
-  $("pdfLink").href = t.pdfUrl || "#";
-  $("pdfLink").textContent = t.pdfUrl ? "운영계획서 PDF 다운로드" : "업로드된 PDF가 없습니다";
+  if (t.pdfUrl) {
+    $("pdfViewLink").style.display = "inline-block";
+    $("pdfDownloadLink").style.display = "inline-block";
+    $("pdfNone").style.display = "none";
+    $("pdfViewLink").href = t.pdfUrl;
+    $("pdfDownloadLink").href = t.pdfUrl;
+    $("pdfDownloadLink").setAttribute("download", t.filename || "");
+  } else {
+    $("pdfViewLink").style.display = "none";
+    $("pdfDownloadLink").style.display = "none";
+    $("pdfNone").style.display = "inline";
+  };
 
   const subSnap = await getDoc(doc(db, "reviewSubmissions", submissionId(targetId, r.id)));
   const isSubmitted = subSnap.exists() && subSnap.data().status === "submitted";
