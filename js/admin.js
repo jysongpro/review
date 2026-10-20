@@ -331,17 +331,15 @@ async function loadItems() {
     if (filter && r.course !== filter) return;
     const tbody = r.part === "part2" ? tbody2 : tbody1;
     const tr = document.createElement("tr");
-    const subBtn = !r.subNo
-      ? `<button class="btn small secondary" onclick="window.__addSubItem('${r.id}')">소항목 추가</button>`
-      : "";
-    tr.innerHTML = `<td>${itemNoLabel(r)}</td><td>${r.course||""}</td><td>${r.field||""}</td><td>${r.question||""}</td>
-      <td>${subBtn}
+    tr.innerHTML = `<td>${itemNoLabel(r)}</td><td>${r.course||""}</td><td>${r.question||""}</td>
+      <td>
+        <button class="btn small secondary" onclick="window.__editItem('${r.id}')">수정</button>
         <button class="btn small danger" onclick="window.__deleteItem('${r.id}')">삭제</button>
       </td>`;
     tbody.appendChild(tr);
   });
-  if (!tbody1.children.length) tbody1.innerHTML = `<tr><td colspan="5" style="text-align:center;color:#999;">등록된 항목이 없습니다.</td></tr>`;
-  if (!tbody2.children.length) tbody2.innerHTML = `<tr><td colspan="5" style="text-align:center;color:#999;">등록된 항목이 없습니다.</td></tr>`;
+  if (!tbody1.children.length) tbody1.innerHTML = `<tr><td colspan="4" style="text-align:center;color:#999;">등록된 항목이 없습니다.</td></tr>`;
+  if (!tbody2.children.length) tbody2.innerHTML = `<tr><td colspan="4" style="text-align:center;color:#999;">등록된 항목이 없습니다.</td></tr>`;
 }
 $("itemCourseFilter").addEventListener("change", loadItems);
 
@@ -382,29 +380,16 @@ $("addItemBtn").addEventListener("click", async () => {
   }
 });
 
-window.__addSubItem = async (parentId) => {
-  const pSnap = await getDoc(doc(db, "reviewItems", parentId));
-  if (!pSnap.exists()) return;
-  const parent = pSnap.data();
-  const field = prompt("소항목 검토분야", parent.field) ?? "";
-  if (field === null) return;
-  const question = prompt("소항목 검토문항", "");
-  if (question === null || !question.trim()) return;
-
-  const siblingsSnap = await getDocs(query(
-    collection(db, "reviewItems"),
-    where("course", "==", parent.course),
-    where("part", "==", parent.part),
-    where("mainNo", "==", parent.mainNo)
-  ));
-  let maxSub = 0;
-  siblingsSnap.forEach(d => { const n = d.data().subNo || 0; if (n > maxSub) maxSub = n; });
-
-  await addDoc(collection(db, "reviewItems"), {
-    course: parent.course, part: parent.part, mainNo: parent.mainNo, subNo: maxSub + 1,
-    field: field.trim(), question: question.trim()
-  });
+window.__editItem = async (id) => {
+  const snap = await getDoc(doc(db, "reviewItems", id));
+  if (!snap.exists()) return;
+  const it = snap.data();
+  const question = prompt("검토문항 수정", it.question || "");
+  if (question === null) return;
+  if (!question.trim()) return alert("검토문항은 비워둘 수 없습니다.");
+  await updateDoc(doc(db, "reviewItems", id), { question: question.trim() });
   loadItems();
+};
 };
 
 window.__deleteItem = async (id) => {
