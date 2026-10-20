@@ -496,12 +496,22 @@ window.__viewOpinion = async (targetId, reviewerId) => {
     ["캠퍼스", t.campus || ""],
     ["학과", t.dept || ""],
     ["전공", t.major || ""],
-    ["계열", t.cate || ""],
-    ["검토위원", rev.name || ""]
+    ["계열", t.cate || ""]
   ];
-  $("opinionInfoTable").innerHTML =
+  $("opinionTargetInfoTable").innerHTML =
     `<thead><tr>${infoCols.map(c => `<th style="background:#e6effa;color:#0f2c5c;border:1px solid #dde5f0;padding:8px;">${c[0]}</th>`).join("")}</tr></thead>
      <tbody><tr>${infoCols.map(c => `<td style="border:1px solid #dde5f0;padding:8px;text-align:center;">${c[1]||"-"}</td>`).join("")}</tr></tbody>`;
+
+  const reviewerCols = [
+    ["검토위원", rev.name || ""],
+    ["소속대학", rev.univ || ""],
+    ["소속캠퍼스", rev.campus || ""],
+    ["휴대폰번호", rev.phone || reviewerId || ""],
+    ["이메일", rev.email || ""]
+  ];
+  $("opinionReviewerInfoTable").innerHTML =
+    `<thead><tr>${reviewerCols.map(c => `<th style="background:#e6effa;color:#0f2c5c;border:1px solid #dde5f0;padding:8px;">${c[0]}</th>`).join("")}</tr></thead>
+     <tbody><tr>${reviewerCols.map(c => `<td style="border:1px solid #dde5f0;padding:8px;text-align:center;">${c[1]||"-"}</td>`).join("")}</tr></tbody>`;
 
   const itemList = Object.values(items).filter(it => it.course === t.course);
   itemList.sort((a,b) => (a.mainNo||0)-(b.mainNo||0) || (a.subNo||0)-(b.subNo||0));
