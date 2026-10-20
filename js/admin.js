@@ -34,11 +34,14 @@ async function ensureAdminSettingsDoc() {
 async function tryLogin() {
   const pw = $("pwInput").value.trim();
   const real = await ensureAdminSettingsDoc();
-  if (pw === real) {
+  // Firestore 콘솔에서 값을 직접 수정했을 때 타입(문자/숫자)이나 앞뒤 공백이 섞여도
+  // 비교가 실패하지 않도록 문자열 변환 + trim 후 비교
+  console.log("[admin] 입력값:", JSON.stringify(pw), "/ 저장된 값:", JSON.stringify(real));
+  if (String(pw) === String(real).trim()) {
     setAdminLoggedIn(true);
     showAdmin();
   } else {
-    toast($("loginMsg"), "비밀번호가 올바르지 않습니다.", true);
+    toast($("loginMsg"), "비밀번호가 올바르지 않습니다. (설정된 값과 다릅니다. 콘솔(F12)을 확인하세요)", true);
   }
 }
 
