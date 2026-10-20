@@ -80,7 +80,7 @@ async function loadAssigned() {
     tbody.appendChild(tr);
   });
   if (count === 0) {
-    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;color:#999;">배정된 검토목록이 없습니다.</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;color:#999;">배정된 교육운영계획서 검토 목록이 없습니다.</td></tr>`;
   }
   tbody.querySelectorAll("button[data-id]").forEach(btn => {
     btn.addEventListener("click", () => openReviewPanel(btn.dataset.id));
@@ -92,7 +92,7 @@ async function openReviewPanel(targetId) {
   const tSnap = await getDoc(doc(db, "targets", targetId));
   const t = tSnap.data();
   $("reviewPanel").style.display = "block";
-  $("reviewPanelTitle").textContent = `검토 입력 - [${t.course}] ${t.campus} ${t.dept} ${t.major||""}`;
+  $("reviewPanelTitle").textContent = `교육운영계획서 검토 하기 - [${t.course}] ${t.campus} ${t.dept} ${t.major||""}`;
   $("pdfLink").href = t.pdfUrl || "#";
   $("pdfLink").textContent = t.pdfUrl ? "운영계획서 PDF 다운로드" : "업로드된 PDF가 없습니다";
 
