@@ -90,3 +90,44 @@ export function toast(msgEl, text, isError = false) {
   msgEl.textContent = text;
   msgEl.className = "msg " + (isError ? "error" : "ok");
 }
+
+// ---- 검토항목 화면 순번 계산 ----
+// DB에 저장된 mainNo 값은 중복·삭제 등으로 값 자체가 비어있거나 엉규 수 있어,
+// 화면에 보여지는 순서(과정+구분 내에서 mainNo/subNo 정렬 순서)를 기준으로
+// 매번 1부터 다시 매기는 순번 라벨을 계산해 준다. 입력: course+part가 같은 항목 배열(이미 정렬됨).
+// 반환값: Map(itemId -> "1", "2-1" 등 현재 화면 순서 기준 라벨)
+export function buildDisplayNoMap(sortedItems) {
+  const map = new Map();
+  let mainCounter = 0;
+  let subCounter = 0;
+  let lastGroupKey = null;
+  sortedItems.forEach(it => {
+    const groupKey = `${it.course}||${it.part}||${it.mainNo}`;
+    if (!it.subNo) {
+      mainCounter++;
+      subCounter = 0;
+      lastGroupKey = groupKey;
+      map.set(it.id, `${mainCounter}`);
+    } else {
+      if (groupKey !== lastGroupKey) {
+        // 부모 주항목이 없이 소항목만 있는 경우(드물때 만을 대비) 새 그룹으로 처리
+        mainCounter++;
+        subCounter = 0;
+        lastGroupKey = groupKey;
+      }
+      subCounter++;
+      map.set(it.id, `${mainCounter}-${subCounter}`);
+    }
+  });
+  return map;
+}
+
+// 검토항목 배열을 정렬(course, part, mainNo, subNo 순)한 뒤 buildDisplayNoMap을 바로 적용해주는 헬퍼
+export function sortAndLabelItems(items) {
+  const sorted = [...items].sort((a, b) =>
+    (a.course||"").localeCompare(b.course||"") ||
+    (a.part||"").localeCompare(b.part||"") ||
+    (a.mainNo||0) - (b.mainNo||0) || (a.subNo||0) - (b.subNo||0)
+  );
+  return { sorted, labelMap: buildDisplayNoMap(sorted) };
+}

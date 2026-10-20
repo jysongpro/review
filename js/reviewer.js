@@ -2,7 +2,7 @@ import { db, storage } from "./firebase-config.js";
 import {
   collection, getDocs, query, where, doc, getDoc, setDoc, addDoc, updateDoc
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-import { setReviewerSession, getReviewerSession, clearReviewerSession, nowStr, toast } from "./common.js";
+import { setReviewerSession, getReviewerSession, clearReviewerSession, nowStr, toast, sortAndLabelItems } from "./common.js";
 
 const $ = (id) => document.getElementById(id);
 
@@ -214,17 +214,13 @@ async function openReviewPanel(targetId) {
   const tbody2 = $("reviewItemsTablePart2").querySelector("tbody");
   tbody1.innerHTML = ""; tbody2.innerHTML = "";
 
-  function itemNoLabel(it) {
-    return it.subNo ? `${it.mainNo||""}-${it.subNo}` : `${it.mainNo||""}`;
-  }
-
-  function renderRow(d) {
+  function renderRow(d, label) {
     const it = d.data();
     const ex = existing[d.id];
     const tr = document.createElement("tr");
     tr.dataset.itemId = d.id;
     tr.innerHTML = `
-      <td>${itemNoLabel(it)}</td>
+      <td>${label}</td>
       <td>${it.question}</td>
       <td>
         <select class="resultSelect" ${isSubmitted ? "disabled" : ""}>
@@ -238,12 +234,12 @@ async function openReviewPanel(targetId) {
     return tr;
   }
 
-  const itemRows = [];
-  itemsSnap.forEach(d => itemRows.push({ id: d.id, ...d.data() }));
-  itemRows.sort((a, b) => (a.mainNo||0) - (b.mainNo||0) || (a.subNo||0) - (b.subNo||0));
+  const itemRowsRaw = [];
+  itemsSnap.forEach(d => itemRowsRaw.push({ id: d.id, ...d.data() }));
+  const { sorted: itemRows, labelMap: itemLabelMap } = sortAndLabelItems(itemRowsRaw);
   itemRows.forEach(it => {
     const tbody = it.part === "part2" ? tbody2 : tbody1;
-    tbody.appendChild(renderRow({ id: it.id, data: () => it }));
+    tbody.appendChild(renderRow({ id: it.id, data: () => it }, itemLabelMap.get(it.id)));
   });
   if (!tbody1.children.length) tbody1.innerHTML = `<tr><td colspan="4" style="text-align:center;color:#999;">등록된 검토항목이 없습니다.</td></tr>`;
   if (!tbody2.children.length) tbody2.innerHTML = `<tr><td colspan="4" style="text-align:center;color:#999;">등록된 검토항목이 없습니다.</td></tr>`;

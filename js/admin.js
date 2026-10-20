@@ -5,7 +5,7 @@ import {
 import {
   ref, uploadBytes, getDownloadURL
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js";
-import { buildCourseOptions, parseExcelFile, exportToExcel, exportToExcelWithMerges, isAdminLoggedIn, setAdminLoggedIn, toast } from "./common.js";
+import { buildCourseOptions, parseExcelFile, exportToExcel, exportToExcelWithMerges, isAdminLoggedIn, setAdminLoggedIn, toast, sortAndLabelItems } from "./common.js";
 
 const $ = (id) => document.getElementById(id);
 function normalizePhone(v) { return (v || "").toString().replace(/[^0-9]/g, ""); }
@@ -330,13 +330,10 @@ async function loadItems() {
   const tbody2 = $("itemTablePart2").querySelector("tbody");
   tbody1.innerHTML = ""; tbody2.innerHTML = "";
 
-  const rows = [];
-  snap.forEach(d => rows.push({ id: d.id, ...d.data() }));
-  rows.sort((a, b) =>
-    (a.course||"").localeCompare(b.course||"") ||
-    (a.part||"").localeCompare(b.part||"") ||
-    (a.mainNo||0) - (b.mainNo||0) || (a.subNo||0) - (b.subNo||0)
-  );
+  const rawRows = [];
+  snap.forEach(d => rawRows.push({ id: d.id, ...d.data() }));
+  // 화면에 보여지는 순서(과정+구분+mainNo/subNo 정렬)를 기준으로 순번을 새로 매김 (DB의 mainNo 값은 사용하지 않음)
+  const { sorted: rows, labelMap } = sortAndLabelItems(rawRows);
 
   // 동일 과정+구분+검토문항(공백 제거 비교) 조합이 2건 이상이면 중복으로 판단
   const dupKeyCount = {};
@@ -354,7 +351,7 @@ async function loadItems() {
     const isDup = dupKeyCount[key] > 1;
     const tr = document.createElement("tr");
     if (isDup) tr.style.background = "#ffecec";
-    tr.innerHTML = `<td>${itemNoLabel(r)}</td><td>${r.course||""}</td>
+    tr.innerHTML = `<td>${labelMap.get(r.id)}</td><td>${r.course||""}</td>
       <td>${isDup ? '<span class="badge bad" style="margin-right:6px;">중복</span>' : ""}${r.question||""}</td>
       <td>
         <button class="btn small secondary" onclick="window.__editItem('${r.id}')">수정</button>
@@ -532,11 +529,10 @@ $("exportResultsBtn").addEventListener("click", () => {
 
   if (!rows.length) return alert("내려받을 검토결과가 없습니다.");
 
-  const itemRows = Object.values(items)
-    .filter(it => it.course === filter)
-    .sort((a, b) => (a.mainNo||0) - (b.mainNo||0) || (a.subNo||0) - (b.subNo||0));
-
-  function itemNo(it) { return it.subNo ? `${it.mainNo||""}-${it.subNo}` : `${it.mainNo||""}`; }
+  const { sorted: itemRows, labelMap: itemLabelMap } = sortAndLabelItems(
+    Object.values(items).filter(it => it.course === filter)
+  );
+  function itemNo(it) { return itemLabelMap.get(it.id); }
 
   const singleHeaders = ["과정", "대학", "캠퍼스", "학과", "전공", "계열", "검토위원", "상태", "등록일시"];
   const tailHeaders = ["최종결과", "최종검토의견"];
@@ -626,17 +622,24 @@ window.__viewOpinion = async (targetId, reviewerId) => {
     ["검토위원", rev.name || ""],
     ["소속대학", rev.univ || ""],
     ["소속캠퍼스", rev.campus || ""],
+    ["소속학과", rev.dept || ""],
     ["휴대폰번호", rev.phone || reviewerId || ""],
-    ["이메일", rev.email || ""],
-    ["최종결과", sub.finalResult || "미정"],
-    ["최종검토의견", sub.finalOpinion || "-"]
+    ["이메일", rev.email || ""]
   ];
   $("opinionReviewerInfoTable").innerHTML =
     `<thead><tr>${reviewerCols.map(c => `<th style="background:#e6effa;color:#0f2c5c;border:1px solid #dde5f0;padding:8px;">${c[0]}</th>`).join("")}</tr></thead>
      <tbody><tr>${reviewerCols.map(c => `<td style="border:1px solid #dde5f0;padding:8px;text-align:center;">${c[1]||"-"}</td>`).join("")}</tr></tbody>`;
 
-  const itemList = Object.values(items).filter(it => it.course === t.course);
-  itemList.sort((a,b) => (a.mainNo||0)-(b.mainNo||0) || (a.subNo||0)-(b.subNo||0));
+  const finalCols = [
+    ["최종결과", sub.finalResult || "미정"],
+    ["최종검토의견", sub.finalOpinion || "-"]
+  ];
+  $("opinionFinalTable").innerHTML =
+    `<thead><tr>${finalCols.map(c => `<th style="background:#e6effa;color:#0f2c5c;border:1px solid #dde5f0;padding:8px;">${c[0]}</th>`).join("")}</tr></thead>
+     <tbody><tr>${finalCols.map(c => `<td style="border:1px solid #dde5f0;padding:8px;text-align:center;">${c[1]||"-"}</td>`).join("")}</tr></tbody>`;
+
+  const itemListRaw = Object.values(items).filter(it => it.course === t.course);
+  const { sorted: itemList, labelMap: itemLabelMap } = sortAndLabelItems(itemListRaw);
 
   const tbody1 = $("opinionTablePart1").querySelector("tbody");
   const tbody2 = $("opinionTablePart2").querySelector("tbody");
@@ -646,7 +649,7 @@ window.__viewOpinion = async (targetId, reviewerId) => {
     const tbody = it.part === "part2" ? tbody2 : tbody1;
     const tr = document.createElement("tr");
     const badge = r && r.result ? `<span class="badge ${r.result==="적합"?"ok":"bad"}">${r.result}</span>` : "-";
-    tr.innerHTML = `<td>${itemNoLabel(it)}</td><td>${it.question||""}</td><td>${badge}</td><td>${r ? (r.opinion||"") : ""}</td>`;
+    tr.innerHTML = `<td>${itemLabelMap.get(it.id)}</td><td>${it.question||""}</td><td>${badge}</td><td>${r ? (r.opinion||"") : ""}</td>`;
     tbody.appendChild(tr);
   });
   if (!tbody1.children.length) tbody1.innerHTML = `<tr><td colspan="4" style="text-align:center;color:#999;">항목 없음</td></tr>`;
