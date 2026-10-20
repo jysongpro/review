@@ -401,48 +401,138 @@ window.__deleteItem = async (id) => {
   loadItems();
 };
 
-// ===================== 등록 내역 / 결과 =====================
+// ===================== 검토결과 조회 =====================
+// targets(검토대상) 1건 + 배정된 검토위원 1명을 기준으로 한 행을 구성.
+// 상태: 미작성 / 작성중 / 제출완료 (reviewSubmissions 컬렉션 기준)
 let _allResultsCache = [];
+let _resultsContext = { targets: {}, reviewers: {}, items: {}, resultsByKey: {}, submissions: {} };
+
 async function loadResults() {
-  const [resultsSnap, targetsSnap, reviewersSnap, itemsSnap] = await Promise.all([
-    getDocs(collection(db, "reviewResults")),
+  const [targetsSnap, reviewersSnap, itemsSnap, resultsSnap, submissionsSnap] = await Promise.all([
     getDocs(collection(db, "targets")),
     getDocs(collection(db, "reviewers")),
-    getDocs(collection(db, "reviewItems"))
+    getDocs(collection(db, "reviewItems")),
+    getDocs(collection(db, "reviewResults")),
+    getDocs(collection(db, "reviewSubmissions"))
   ]);
-  const targets = {}; targetsSnap.forEach(d => targets[d.id] = d.data());
-  const reviewers = {}; reviewersSnap.forEach(d => reviewers[d.id] = d.data());
-  const items = {}; itemsSnap.forEach(d => items[d.id] = d.data());
+  const targets = {}; targetsSnap.forEach(d => targets[d.id] = { id: d.id, ...d.data() });
+  const reviewers = {}; reviewersSnap.forEach(d => reviewers[d.id] = { id: d.id, ...d.data() });
+  const items = {}; itemsSnap.forEach(d => items[d.id] = { id: d.id, ...d.data() });
+
+  const resultsByKey = {};
+  resultsSnap.forEach(d => {
+    const r = d.data();
+    const key = `${r.targetId}_${r.reviewerId}`;
+    if (!resultsByKey[key]) resultsByKey[key] = [];
+    resultsByKey[key].push({ id: d.id, ...r });
+  });
+  const submissions = {};
+  submissionsSnap.forEach(d => submissions[d.id] = { id: d.id, ...d.data() });
+
+  _resultsContext = { targets, reviewers, items, resultsByKey, submissions };
 
   const filter = $("resultCourseFilter").value;
   const tbody = $("resultTable").querySelector("tbody");
   tbody.innerHTML = "";
   _allResultsCache = [];
 
-  resultsSnap.forEach(d => {
-    const r = d.data();
-    const t = targets[r.targetId] || {};
-    const rev = reviewers[r.reviewerId] || {};
-    const it = items[r.itemId] || {};
+  const rows = [];
+  Object.values(targets).forEach(t => {
     if (filter && t.course !== filter) return;
-    const row = {
-      "과정": t.course || "", "캠퍼스": t.campus || "", "학과": t.dept || "", "전공과정": t.major || "",
-      "검토위원": rev.name || "", "구분": PART_LABEL[it.part] || PART_LABEL.part1, "검토분야": it.field || "", "검토문항": it.question || "",
-      "결과": r.result || "", "검토의견": r.opinion || "", "등록일시": r.updatedAt || ""
-    };
-    _allResultsCache.push(row);
+    const phone = normalizePhone(t.reviewerAssigned);
+    if (!phone) return;
+    const rev = reviewers[phone];
+    if (!rev) return;
+    const key = `${t.id}_${phone}`;
+    const sub = submissions[key];
+    const hasResults = !!resultsByKey[key];
+    let status = "미작성";
+    if (sub && sub.status === "submitted") status = "제출완료";
+    else if (hasResults || (sub && sub.status === "draft")) status = "작성중";
+    const updatedAt = (sub && (sub.submittedAt || sub.updatedAt)) || "";
+    rows.push({ t, rev, key, status, updatedAt });
+  });
+  rows.sort((a, b) => (Number(a.t.no)||0) - (Number(b.t.no)||0));
+
+  rows.forEach(({ t, rev, status, updatedAt }) => {
+    _allResultsCache.push({
+      "과정": t.course || "", "대학": t.collage || "", "캠퍼스": t.campus || "", "학과": t.dept || "", "전공": t.major || "", "계열": t.cate || "",
+      "검토위원": rev.name || "", "상태": status, "등록일시": updatedAt
+    });
+    const badgeClass = status === "제출완료" ? "ok" : "pending";
+    const badgeStyle = status === "작성중" ? 'style="background:#fff3cd;color:#8a6d00;"' : "";
     const tr = document.createElement("tr");
-    tr.innerHTML = `<td>${row["과정"]}</td><td>${row["캠퍼스"]}</td><td>${row["학과"]}</td><td>${row["검토위원"]}</td>
-      <td>${row["구분"]}</td><td>${row["검토분야"]}</td><td>${row["검토문항"]}</td>
-      <td><span class="badge ${row["결과"]==="적합"?"ok":row["결과"]==="부적합"?"bad":"pending"}">${row["결과"]||"미입력"}</span></td>
-      <td>${row["검토의견"]}</td><td>${row["등록일시"]}</td>`;
+    tr.innerHTML = `<td>${t.collage||""}</td><td>${t.campus||""}</td><td>${t.dept||""}</td><td>${t.major||""}</td><td>${t.cate||""}</td>
+      <td>${rev.name||""}</td><td>${updatedAt||"-"}</td>
+      <td><span class="badge ${badgeClass}" ${badgeStyle}>${status}</span></td>
+      <td>
+        <button class="btn small secondary" onclick="window.__viewOpinion('${t.id}','${rev.id}')">검토의견서 보기</button>
+        ${status === "제출완료" ? `<button class="btn small" onclick="window.__reopenSubmission('${t.id}','${rev.id}')">수정하기</button>` : ""}
+      </td>`;
     tbody.appendChild(tr);
   });
+  if (!rows.length) {
+    tbody.innerHTML = `<tr><td colspan="9" style="text-align:center;color:#999;">조회된 검토목록이 없습니다.</td></tr>`;
+  }
 }
 $("resultCourseFilter").addEventListener("change", loadResults);
 $("exportResultsBtn").addEventListener("click", () => {
   exportToExcel(_allResultsCache, `검토결과_${$("resultCourseFilter").value || "전체"}.xlsx`);
 });
+
+// ---- 검토의견서 보기 ----
+window.__viewOpinion = async (targetId, reviewerId) => {
+  const { targets, reviewers, items, resultsByKey } = _resultsContext;
+  const t = targets[targetId] || {};
+  const rev = reviewers[reviewerId] || {};
+  const key = `${targetId}_${reviewerId}`;
+  const resultList = resultsByKey[key] || [];
+  const resultByItem = {};
+  resultList.forEach(r => resultByItem[r.itemId] = r);
+
+  const infoCols = [
+    ["과정", t.curri || t.course || ""],
+    ["대학", t.collage || ""],
+    ["캠퍼스", t.campus || ""],
+    ["학과", t.dept || ""],
+    ["전공", t.major || ""],
+    ["계열", t.cate || ""],
+    ["검토위원", rev.name || ""]
+  ];
+  $("opinionInfoTable").innerHTML =
+    `<thead><tr>${infoCols.map(c => `<th style="background:#e6effa;color:#0f2c5c;border:1px solid #dde5f0;padding:8px;">${c[0]}</th>`).join("")}</tr></thead>
+     <tbody><tr>${infoCols.map(c => `<td style="border:1px solid #dde5f0;padding:8px;text-align:center;">${c[1]||"-"}</td>`).join("")}</tr></tbody>`;
+
+  const itemList = Object.values(items).filter(it => it.course === t.course);
+  itemList.sort((a,b) => (a.mainNo||0)-(b.mainNo||0) || (a.subNo||0)-(b.subNo||0));
+
+  const tbody1 = $("opinionTablePart1").querySelector("tbody");
+  const tbody2 = $("opinionTablePart2").querySelector("tbody");
+  tbody1.innerHTML = ""; tbody2.innerHTML = "";
+  itemList.forEach(it => {
+    const r = resultByItem[it.id];
+    const tbody = it.part === "part2" ? tbody2 : tbody1;
+    const tr = document.createElement("tr");
+    const badge = r && r.result ? `<span class="badge ${r.result==="적합"?"ok":"bad"}">${r.result}</span>` : "-";
+    tr.innerHTML = `<td>${itemNoLabel(it)}</td><td>${it.question||""}</td><td>${badge}</td><td>${r ? (r.opinion||"") : ""}</td>`;
+    tbody.appendChild(tr);
+  });
+  if (!tbody1.children.length) tbody1.innerHTML = `<tr><td colspan="4" style="text-align:center;color:#999;">항목 없음</td></tr>`;
+  if (!tbody2.children.length) tbody2.innerHTML = `<tr><td colspan="4" style="text-align:center;color:#999;">항목 없음</td></tr>`;
+
+  $("opinionModal").style.display = "flex";
+};
+$("opinionModalClose").addEventListener("click", () => { $("opinionModal").style.display = "none"; });
+$("opinionModal").addEventListener("click", (e) => { if (e.target.id === "opinionModal") $("opinionModal").style.display = "none"; });
+
+// ---- 제출완료된 검토의견서를 다시 작성할 수 있도록 잠금 해제 ----
+window.__reopenSubmission = async (targetId, reviewerId) => {
+  if (!confirm("최종제출된 검토의견서를 다시 작성할 수 있도록 허용하시겠습니까?")) return;
+  await setDoc(doc(db, "reviewSubmissions", `${targetId}_${reviewerId}`), {
+    targetId, reviewerId, status: "draft"
+  }, { merge: true });
+  loadResults();
+};
 
 // ===================== 비밀번호 변경 =====================
 $("changePwBtn").addEventListener("click", async () => {

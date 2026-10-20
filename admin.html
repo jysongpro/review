@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>관리자 - 교육운영계획서 검토 지원도구</title>
-<link rel="stylesheet" href="css/style.css?v=1.9.1">
+<link rel="stylesheet" href="css/style.css?v=1.10.0">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 </head>
 <body>
@@ -28,7 +28,7 @@
     <div class="tab active" data-tab="reviewers">검토위원 등록</div>
     <div class="tab" data-tab="targets">검토대상 운영계획서</div>
     <div class="tab" data-tab="items">검토항목 등록</div>
-    <div class="tab" data-tab="results">등록 내역 / 결과</div>
+    <div class="tab" data-tab="results">검토결과 조회</div>
     <div class="tab" data-tab="settings">비밀번호 변경</div>
   </div>
 
@@ -151,13 +151,13 @@
     </div>
   </section>
 
-  <!-- 등록 내역 / 결과 -->
+  <!-- 검토결과 조회 -->
   <section id="panel-results" class="panel" style="display:none;">
     <div class="card">
-      <h2>검토결과 등록 내역</h2>
+      <h2>검토결과 조회</h2>
       <div class="row">
         <div class="field" style="max-width:260px;">
-          <label>과정 필터</label>
+          <label>과정 선택</label>
           <select id="resultCourseFilter"></select>
         </div>
         <div class="field" style="align-self:flex-end;">
@@ -165,11 +165,28 @@
         </div>
       </div>
       <table id="resultTable">
-        <thead><tr><th>과정</th><th>캠퍼스</th><th>학과</th><th>검토위원</th><th>구분</th><th>검토분야</th><th>검토문항</th><th>결과</th><th>검토의견</th><th>등록일시</th></tr></thead>
+        <thead><tr><th>대학</th><th>캠퍼스</th><th>학과</th><th>전공</th><th>계열</th><th>검토위원</th><th>등록일시</th><th>상태</th><th>관리</th></tr></thead>
         <tbody></tbody>
       </table>
     </div>
   </section>
+
+  <!-- 검토의견서 보기 모달 -->
+  <div class="modal-overlay" id="opinionModal" style="display:none;position:fixed;inset:0;z-index:1000;background:rgba(10,20,40,.55);align-items:flex-start;justify-content:center;padding:30px 16px;overflow-y:auto;">
+    <div class="modal-box" style="background:#fff;border-radius:14px;max-width:1000px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,.35);max-height:calc(100vh - 60px);overflow-y:auto;">
+      <div class="modal-head" style="display:flex;align-items:center;justify-content:space-between;padding:18px 24px;border-bottom:1px solid #dde5f0;position:sticky;top:0;background:#fff;border-radius:14px 14px 0 0;">
+        <h2 style="margin:0;font-size:17px;color:#0f2c5c;">검토의견서 보기</h2>
+        <button id="opinionModalClose" style="border:none;background:#eef2f8;color:#334;width:32px;height:32px;border-radius:50%;cursor:pointer;font-size:16px;">✕</button>
+      </div>
+      <div class="modal-body" style="padding:20px 24px 26px;">
+        <table class="info-table" id="opinionInfoTable" style="width:100%;border-collapse:collapse;margin-bottom:16px;"></table>
+        <h3 style="font-size:14px;color:#0f2c5c;margin:14px 0 8px;">1. 교과과정개편 세부기준 준수 여부</h3>
+        <table id="opinionTablePart1"><thead><tr><th style="width:60px;">순번</th><th>검토문항</th><th style="width:80px;">결과</th><th>검토의견</th></tr></thead><tbody></tbody></table>
+        <h3 style="font-size:14px;color:#0f2c5c;margin:18px 0 8px;">2. 교육운영계획서 세부내용 검토</h3>
+        <table id="opinionTablePart2"><thead><tr><th style="width:60px;">순번</th><th>검토문항</th><th style="width:80px;">결과</th><th>검토의견</th></tr></thead><tbody></tbody></table>
+      </div>
+    </div>
+  </div>
 
   <!-- 비밀번호 변경 -->
   <section id="panel-settings" class="panel" style="display:none;">
@@ -182,6 +199,6 @@
   </section>
 </div>
 
-<script type="module" src="js/admin.js?v=1.9.1"></script>
+<script type="module" src="js/admin.js?v=1.10.0"></script>
 </body>
 </html>
