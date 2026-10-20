@@ -4,8 +4,17 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>관리자 - 교육운영계획서 검토 지원도구</title>
-<link rel="stylesheet" href="css/style.css?v=1.18.0">
+<link rel="stylesheet" href="css/style.css?v=1.19.0">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+  @media print{
+    body > *{ display:none !important; }
+    #opinionModal{ display:block !important; position:static !important; background:none !important; padding:0 !important; }
+    #opinionModal .modal-box{ box-shadow:none !important; max-height:none !important; max-width:none !important; }
+    #opinionModal .modal-body{ padding:0 24px !important; }
+    .no-print{ display:none !important; }
+  }
+</style>
 </head>
 <body>
 <header class="topbar">
@@ -179,7 +188,10 @@
     <div class="modal-box" style="background:#fff;border-radius:14px;max-width:1000px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,.35);max-height:calc(100vh - 60px);overflow-y:auto;">
       <div class="modal-head" style="display:flex;align-items:center;justify-content:space-between;padding:18px 24px;border-bottom:1px solid #dde5f0;position:sticky;top:0;background:#fff;border-radius:14px 14px 0 0;">
         <h2 style="margin:0;font-size:17px;color:#0f2c5c;">검토의견서 보기</h2>
-        <button id="opinionModalClose" style="border:none;background:#eef2f8;color:#334;width:32px;height:32px;border-radius:50%;cursor:pointer;font-size:16px;">✕</button>
+        <div class="no-print" style="display:flex;gap:8px;">
+          <button id="opinionPrintBtn" class="btn secondary small" style="border:1px solid #cdd8e8;background:#eef2f8;color:#0f2c5c;border-radius:6px;padding:6px 14px;cursor:pointer;font-size:13px;">인쇄하기</button>
+          <button id="opinionModalClose" style="border:none;background:#eef2f8;color:#334;width:32px;height:32px;border-radius:50%;cursor:pointer;font-size:16px;">✕</button>
+        </div>
       </div>
       <div class="modal-body" style="padding:20px 24px 26px;">
         <h3 style="font-size:15px;color:#0f2c5c;margin:0 0 8px;">2027학년도 교육운영계획서 정보</h3>
@@ -209,6 +221,6 @@
   </section>
 </div>
 
-<script type="module" src="js/admin.js?v=1.18.0"></script>
+<script type="module" src="js/admin.js?v=1.19.0"></script>
 </body>
 </html>

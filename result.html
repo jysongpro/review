@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>검토결과조회 - 교육운영계획서 검토 지원도구</title>
-<link rel="stylesheet" href="css/style.css?v=1.18.0">
+<link rel="stylesheet" href="css/style.css?v=1.19.0">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
   .modal-overlay{ display:none; position:fixed; inset:0; z-index:1000; background:rgba(10,20,40,.55);
@@ -21,6 +21,13 @@
   .info-table th, .info-table td{ border:1px solid #dde5f0; padding:8px; }
   .info-table th{ background:#e6effa; color:#0f2c5c; }
   .info-table td{ text-align:center; }
+  @media print{
+    body > *{ display:none !important; }
+    #opinionModal{ display:block !important; position:static !important; background:none !important; padding:0 !important; }
+    #opinionModal .modal-box{ box-shadow:none !important; max-height:none !important; max-width:none !important; }
+    #opinionModal .modal-body{ padding:0 24px !important; }
+    .no-print{ display:none !important; }
+  }
 </style>
 </head>
 <body>
@@ -59,7 +66,10 @@
   <div class="modal-box">
     <div class="modal-head">
       <h2>검토의견서 보기</h2>
-      <button class="modal-close" id="opinionModalClose">✕</button>
+      <div class="no-print" style="display:flex;gap:8px;">
+        <button class="btn secondary small" id="opinionPrintBtn">인쇄하기</button>
+        <button class="modal-close" id="opinionModalClose">✕</button>
+      </div>
     </div>
     <div class="modal-body">
       <h3 style="font-size:15px;color:#0f2c5c;margin:0 0 8px;">2027학년도 교육운영계획서 정보</h3>
@@ -80,6 +90,6 @@
   </div>
 </div>
 
-<script type="module" src="js/result.js?v=1.18.0"></script>
+<script type="module" src="js/result.js?v=1.19.0"></script>
 </body>
 </html>
