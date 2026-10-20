@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>관리자 - 교육운영계획서 검토 지원도구</title>
-<link rel="stylesheet" href="css/style.css?v=1.11.0">
+<link rel="stylesheet" href="css/style.css?v=1.13.0">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 </head>
 <body>
@@ -140,14 +140,20 @@
       <h2>등록된 검토항목</h2>
       <div class="row">
         <div class="field" style="max-width:260px;">
-          <label>과정 필터</label>
+          <label>과정 필터 (미선택 시 전체 표시)</label>
           <select id="itemCourseFilter"></select>
         </div>
+        <div class="field" style="align-self:flex-end;">
+          <button class="btn secondary" id="refreshItemsBtn">다시불러오기</button>
+        </div>
       </div>
-      <h3 style="font-size:14px;color:#0f2c5c;margin:18px 0 8px;">1. 교과과정개편 세부기준 준수 여부</h3>
-      <table id="itemTablePart1"><thead><tr><th style="width:70px;">순번</th><th>과정</th><th>검토문항</th><th>관리</th></tr></thead><tbody></tbody></table>
-      <h3 style="font-size:14px;color:#0f2c5c;margin:22px 0 8px;">2. 교육운영계획서 세부내용 검토</h3>
-      <table id="itemTablePart2"><thead><tr><th style="width:70px;">순번</th><th>과정</th><th>검토문항</th><th>관리</th></tr></thead><tbody></tbody></table>
+      <p style="font-size:12px;color:#c62828;background:#fff3f3;border:1px solid #ffd4d4;border-radius:6px;padding:8px 12px;">
+        빨간색으로 표시된 항목은 동일 과정·구분에 같은 검토문항이 여러 번 저장된 <b>중복 항목</b>입니다. 필요없는 항목은 삭제 버튼으로 지워주세요.
+      </p>
+      <h3 style="font-size:14px;color:#0f2c5c;margin:18px 0 8px;">1. 교과과정개편 세부기준 준수 여부 (<span id="part1Count">0</span>건)</h3>
+      <table id="itemTablePart1"><thead><tr><th style="width:70px;">순번</th><th>과정</th><th>구분</th><th>검토문항</th><th>문서ID</th><th>관리</th></tr></thead><tbody></tbody></table>
+      <h3 style="font-size:14px;color:#0f2c5c;margin:22px 0 8px;">2. 교육운영계획서 세부내용 검토 (<span id="part2Count">0</span>건)</h3>
+      <table id="itemTablePart2"><thead><tr><th style="width:70px;">순번</th><th>과정</th><th>구분</th><th>검토문항</th><th>문서ID</th><th>관리</th></tr></thead><tbody></tbody></table>
     </div>
   </section>
 
@@ -165,7 +171,7 @@
         </div>
       </div>
       <table id="resultTable">
-        <thead><tr><th>대학</th><th>캠퍼스</th><th>학과</th><th>전공</th><th>계열</th><th>검토위원</th><th>등록일시</th><th>상태</th><th>관리</th></tr></thead>
+        <thead><tr><th>대학</th><th>캠퍼스</th><th>학과</th><th>전공</th><th>계열</th><th>검토위원</th><th>등록일시</th><th>상태</th><th>최종결과</th><th>최종검토의견</th><th>관리</th></tr></thead>
         <tbody></tbody>
       </table>
     </div>
@@ -203,6 +209,6 @@
   </section>
 </div>
 
-<script type="module" src="js/admin.js?v=1.11.0"></script>
+<script type="module" src="js/admin.js?v=1.13.0"></script>
 </body>
 </html>

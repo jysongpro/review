@@ -322,6 +322,8 @@ function itemNoLabel(it) {
 }
 
 async function loadItems() {
+  // 필터를 걸지 않고(과정 미선택 시) reviewItems 콜렉션의 모든 문서를 그대로 불러와 보여주어,
+  // 중복 저장된 항목까지 누락 없이 확인하고 관리자가 직접 삭제할 수 있도록 함
   const snap = await getDocs(collection(db, "reviewItems"));
   const filter = $("itemCourseFilter").value;
   const tbody1 = $("itemTablePart1").querySelector("tbody");
@@ -330,23 +332,44 @@ async function loadItems() {
 
   const rows = [];
   snap.forEach(d => rows.push({ id: d.id, ...d.data() }));
-  rows.sort((a, b) => (a.mainNo||0) - (b.mainNo||0) || (a.subNo||0) - (b.subNo||0));
+  rows.sort((a, b) =>
+    (a.course||"").localeCompare(b.course||"") ||
+    (a.part||"").localeCompare(b.part||"") ||
+    (a.mainNo||0) - (b.mainNo||0) || (a.subNo||0) - (b.subNo||0)
+  );
 
+  // 동일 과정+구분+검토문항(공백 제거 비교) 조합이 2건 이상이면 중복으로 판단
+  const dupKeyCount = {};
+  rows.forEach(r => {
+    const key = `${r.course}||${r.part}||${(r.question||"").trim().replace(/\s+/g, " ")}`;
+    dupKeyCount[key] = (dupKeyCount[key] || 0) + 1;
+  });
+
+  let count1 = 0, count2 = 0;
   rows.forEach(r => {
     if (filter && r.course !== filter) return;
     const tbody = r.part === "part2" ? tbody2 : tbody1;
+    if (r.part === "part2") count2++; else count1++;
+    const key = `${r.course}||${r.part}||${(r.question||"").trim().replace(/\s+/g, " ")}`;
+    const isDup = dupKeyCount[key] > 1;
     const tr = document.createElement("tr");
-    tr.innerHTML = `<td>${itemNoLabel(r)}</td><td>${r.course||""}</td><td>${r.question||""}</td>
+    if (isDup) tr.style.background = "#ffecec";
+    tr.innerHTML = `<td>${itemNoLabel(r)}</td><td>${r.course||""}</td><td>${PART_LABEL[r.part] ? (r.part==="part2"?"2":"1") : "1"}</td>
+      <td>${isDup ? '<span class="badge bad" style="margin-right:6px;">중복</span>' : ""}${r.question||""}</td>
+      <td style="font-size:11px;color:#999;">${r.id}</td>
       <td>
         <button class="btn small secondary" onclick="window.__editItem('${r.id}')">수정</button>
         <button class="btn small danger" onclick="window.__deleteItem('${r.id}')">삭제</button>
       </td>`;
     tbody.appendChild(tr);
   });
-  if (!tbody1.children.length) tbody1.innerHTML = `<tr><td colspan="4" style="text-align:center;color:#999;">등록된 항목이 없습니다.</td></tr>`;
-  if (!tbody2.children.length) tbody2.innerHTML = `<tr><td colspan="4" style="text-align:center;color:#999;">등록된 항목이 없습니다.</td></tr>`;
+  if (!tbody1.children.length) tbody1.innerHTML = `<tr><td colspan="6" style="text-align:center;color:#999;">등록된 항목이 없습니다.</td></tr>`;
+  if (!tbody2.children.length) tbody2.innerHTML = `<tr><td colspan="6" style="text-align:center;color:#999;">등록된 항목이 없습니다.</td></tr>`;
+  $("part1Count").textContent = count1;
+  $("part2Count").textContent = count2;
 }
 $("itemCourseFilter").addEventListener("change", loadItems);
+$("refreshItemsBtn").addEventListener("click", loadItems);
 
 async function nextMainNo(course, part) {
   const snap = await getDocs(query(collection(db, "reviewItems"), where("course", "==", course), where("part", "==", part)));
@@ -451,21 +474,26 @@ async function loadResults() {
     if (sub && sub.status === "submitted") status = "제출완료";
     else if (hasResults || (sub && sub.status === "draft")) status = "작성중";
     const updatedAt = (sub && (sub.submittedAt || sub.updatedAt)) || "";
-    rows.push({ t, rev, key, status, updatedAt });
+    const finalResult = (sub && sub.finalResult) || "";
+    const finalOpinion = (sub && sub.finalOpinion) || "";
+    rows.push({ t, rev, key, status, updatedAt, finalResult, finalOpinion });
   });
   rows.sort((a, b) => (Number(a.t.no)||0) - (Number(b.t.no)||0));
 
-  rows.forEach(({ t, rev, status, updatedAt }) => {
+  rows.forEach(({ t, rev, status, updatedAt, finalResult, finalOpinion }) => {
     _allResultsCache.push({
       "과정": t.course || "", "대학": t.collage || "", "캠퍼스": t.campus || "", "학과": t.dept || "", "전공": t.major || "", "계열": t.cate || "",
-      "검토위원": rev.name || "", "상태": status, "등록일시": updatedAt
+      "검토위원": rev.name || "", "상태": status, "등록일시": updatedAt, "최종결과": finalResult, "최종검토의견": finalOpinion
     });
     const badgeClass = status === "제출완료" ? "ok" : "pending";
     const badgeStyle = status === "작성중" ? 'style="background:#fff3cd;color:#8a6d00;"' : "";
+    const finalBadge = finalResult ? `<span class="badge ${finalResult==="적합"?"ok":finalResult==="부적합"?"bad":"pending"}">${finalResult}</span>` : "-";
     const tr = document.createElement("tr");
     tr.innerHTML = `<td>${t.collage||""}</td><td>${t.campus||""}</td><td>${t.dept||""}</td><td>${t.major||""}</td><td>${t.cate||""}</td>
       <td>${rev.name||""}</td><td>${updatedAt||"-"}</td>
       <td><span class="badge ${badgeClass}" ${badgeStyle}>${status}</span></td>
+      <td>${finalBadge}</td>
+      <td>${finalOpinion || "-"}</td>
       <td>
         <button class="btn small secondary" onclick="window.__viewOpinion('${t.id}','${rev.id}')">검토의견서 보기</button>
         ${status === "제출완료" ? `<button class="btn small" onclick="window.__reopenSubmission('${t.id}','${rev.id}')">수정하기</button>` : ""}
@@ -473,7 +501,7 @@ async function loadResults() {
     tbody.appendChild(tr);
   });
   if (!rows.length) {
-    tbody.innerHTML = `<tr><td colspan="9" style="text-align:center;color:#999;">조회된 검토목록이 없습니다.</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="11" style="text-align:center;color:#999;">조회된 검토목록이 없습니다.</td></tr>`;
   }
 }
 $("resultCourseFilter").addEventListener("change", loadResults);

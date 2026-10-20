@@ -183,6 +183,10 @@ async function openReviewPanel(targetId) {
   const existing = {};
   resultsSnap.forEach(d => existing[d.data().itemId] = { id: d.id, ...d.data() });
 
+  const subData = subSnap.exists() ? subSnap.data() : {};
+  $("finalOpinionInput").value = subData.finalOpinion || "";
+  $("finalOpinionInput").disabled = isSubmitted;
+
   const tbody1 = $("reviewItemsTablePart1").querySelector("tbody");
   const tbody2 = $("reviewItemsTablePart2").querySelector("tbody");
   tbody1.innerHTML = ""; tbody2.innerHTML = "";
@@ -221,6 +225,21 @@ async function openReviewPanel(targetId) {
   if (!tbody1.children.length) tbody1.innerHTML = `<tr><td colspan="4" style="text-align:center;color:#999;">등록된 검토항목이 없습니다.</td></tr>`;
   if (!tbody2.children.length) tbody2.innerHTML = `<tr><td colspan="4" style="text-align:center;color:#999;">등록된 검토항목이 없습니다.</td></tr>`;
 
+  // 최종결과 자동 계산: 하나라도 부적합이면 부적합, 모든 항목이 적합이면 적합, 그 외(미입력 포함)는 미정
+  function recomputeFinalResult() {
+    const selects = [...tbody1.querySelectorAll(".resultSelect"), ...tbody2.querySelectorAll(".resultSelect")];
+    const values = selects.map(s => s.value);
+    let finalResult = "미정";
+    if (values.length && values.some(v => v === "부적합")) finalResult = "부적합";
+    else if (values.length && values.every(v => v === "적합")) finalResult = "적합";
+    $("finalResultInput").value = finalResult;
+    return finalResult;
+  }
+  [...tbody1.querySelectorAll(".resultSelect"), ...tbody2.querySelectorAll(".resultSelect")].forEach(sel => {
+    sel.addEventListener("change", recomputeFinalResult);
+  });
+  recomputeFinalResult();
+
   $("submittedNotice").style.display = isSubmitted ? "block" : "none";
   $("reviewActionBtns").style.display = isSubmitted ? "none" : "block";
   $("saveMsg").textContent = "";
@@ -244,11 +263,13 @@ async function openReviewPanel(targetId) {
         });
       }
     }
-    if (savedAny) {
-      await setDoc(doc(db, "reviewSubmissions", submissionId(targetId, r.id)), {
-        targetId, reviewerId: r.id, status: "draft", updatedAt: nowStr()
-      }, { merge: true });
-    }
+    const finalResult = recomputeFinalResult();
+    const finalOpinion = $("finalOpinionInput").value.slice(0, 100);
+    await setDoc(doc(db, "reviewSubmissions", submissionId(targetId, r.id)), {
+      targetId, reviewerId: r.id,
+      status: savedAny || subData.status === "draft" ? "draft" : (subData.status || "draft"),
+      finalResult, finalOpinion, updatedAt: nowStr()
+    }, { merge: true });
     toast($("saveMsg"), "저장되었습니다.");
     loadAssigned();
     openReviewPanel(targetId);

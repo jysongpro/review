@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>검토위원 - 교육운영계획서 검토 지원도구</title>
-<link rel="stylesheet" href="css/style.css?v=1.11.0">
+<link rel="stylesheet" href="css/style.css?v=1.13.0">
 <style>
   .modal-overlay{
     display:none; position:fixed; inset:0; z-index:1000;
@@ -73,7 +73,7 @@
 <div class="modal-overlay" id="reviewModal">
   <div class="modal-box">
     <div class="modal-head">
-      <h2>교육운영계획서 검토 하기</h2>
+      <h2>교육운영계획서 검토</h2>
       <button class="modal-close" id="modalCloseBtn">✕</button>
     </div>
     <div class="modal-body">
@@ -112,6 +112,19 @@
         <tbody></tbody>
       </table>
 
+      <div id="finalBox" style="margin-top:22px;padding:16px;background:#f4f7fb;border:1px solid #dde5f0;border-radius:10px;">
+        <div class="row">
+          <div class="field" style="max-width:200px;">
+            <label>최종결과</label>
+            <input id="finalResultInput" type="text" readonly style="font-weight:700;text-align:center;">
+          </div>
+        </div>
+        <div class="field" style="margin-top:10px;">
+          <label>최종검토의견 (100자 이내)</label>
+          <textarea id="finalOpinionInput" maxlength="100" rows="2" style="width:100%;resize:vertical;"></textarea>
+        </div>
+      </div>
+
       <div id="reviewActionBtns" style="margin-top:14px;">
         <button class="btn" id="saveReviewBtn">저장</button>
       </div>
@@ -120,6 +133,6 @@
   </div>
 </div>
 
-<script type="module" src="js/reviewer.js?v=1.11.0"></script>
+<script type="module" src="js/reviewer.js?v=1.13.0"></script>
 </body>
 </html>
