@@ -143,7 +143,7 @@ async function submitFinal(targetId) {
   itemsSnap.forEach(d => {
     const it = d.data();
     if (!opinionByItem[d.id]) {
-      missing.push(it.subNo ? `${it.mainNo||""}-${it.subNo}` : `${it.mainNo||""}`);
+      missing.push(`${it.mainNo||""}`);
     }
   });
   if (missing.length) {

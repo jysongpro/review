@@ -314,12 +314,8 @@ $("uploadAssignBtn").addEventListener("click", async () => {
 
 // ===================== 검토항목 등록 =====================
 // part1: 교과과정개편 세부기준 준수 여부 / part2: 교육운영계획서 세부내용 검토
-// mainNo: 과정+구분(part) 내에서 자동 증가하는 순번. subNo: 0이면 주항목, 1 이상이면 소항목(1-1, 1-2 ...)
+// mainNo: 과정+구분(part) 내에서 자동 증가하는 순번 (소항목은 사용하지 않음)
 const PART_LABEL = { part1: "1. 교과과정개편 세부기준 준수 여부", part2: "2. 교육운영계획서 세부내용 검토" };
-
-function itemNoLabel(it) {
-  return it.subNo ? `${it.mainNo}-${it.subNo}` : `${it.mainNo}`;
-}
 
 async function loadItems() {
   // 필터를 걸지 않고(과정 미선택 시) reviewItems 콜렉션의 모든 문서를 그대로 불러와 보여주어,
@@ -332,7 +328,7 @@ async function loadItems() {
 
   const rawRows = [];
   snap.forEach(d => rawRows.push({ id: d.id, ...d.data() }));
-  // 화면에 보여지는 순서(과정+구분+mainNo/subNo 정렬)를 기준으로 순번을 새로 매김 (DB의 mainNo 값은 사용하지 않음)
+  // 화면에 보여지는 순서(과정+구분+mainNo 정렬)를 기준으로 순번을 새로 매김 (DB의 mainNo 값은 사용하지 않음)
   const { sorted: rows, labelMap } = sortAndLabelItems(rawRows);
 
   // 동일 과정+구분+검토문항(공백 제거 비교) 조합이 2건 이상이면 중복으로 판단
@@ -384,7 +380,7 @@ $("addItemBtn").addEventListener("click", async () => {
   $("addItemBtn").disabled = true;
   try {
     const mainNo = await nextMainNo(course, part);
-    await addDoc(collection(db, "reviewItems"), { course, part, mainNo, subNo: 0, field: "", question });
+    await addDoc(collection(db, "reviewItems"), { course, part, mainNo, field: "", question });
 
     // 다음 항목을 바로 이어서 입력할 수 있도록 입력란만 비우고(과정/구분은 유지) 포커스를 검토문항으로 이동
     $("itemQuestion").value = "";
