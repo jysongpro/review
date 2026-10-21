@@ -258,7 +258,7 @@ async function loadTargets() {
     if (deptFilter && r.dept !== deptFilter) return;
     seq++;
     const tr = document.createElement("tr");
-    tr.innerHTML = `<td>${seq}</td><td>${r.course||""}</td><td>${r.collage||""}</td><td>${r.campus||""}</td><td>${r.dept||""}</td><td>${r.major||""}</td><td>${r.cate||""}</td><td>${r.per||""}</td><td>${r.dn||""}</td><td>${r.reviewerAssigned||"-"}</td>
+    tr.innerHTML = `<td>${seq}</td><td>${r.no||""}</td><td>${r.course||""}</td><td>${r.collage||""}</td><td>${r.campus||""}</td><td>${r.dept||""}</td><td>${r.major||""}</td><td>${r.cate||""}</td><td>${r.per||""}</td><td>${r.dn||""}</td><td>${r.reviewerAssigned||"-"}</td>
       <td>${r.pdfUrl ? `<a href="${r.pdfUrl}" target="_blank">보기</a>` : "-"}</td>`;
     tbody.appendChild(tr);
 
@@ -512,18 +512,16 @@ async function loadResults() {
   });
   rows.sort((a, b) => (Number(a.t.no)||0) - (Number(b.t.no)||0));
 
-  let rseq = 0;
   rows.forEach(({ t, rev, status, updatedAt, finalResult, finalOpinion }) => {
-    rseq++;
     _allResultsCache.push({
-      "No": rseq, "과정": t.course || "", "대학": t.collage || "", "캠퍼스": t.campus || "", "학과": t.dept || "", "전공": t.major || "", "계열": t.cate || "",
+      "No": t.no || "", "과정": t.course || "", "대학": t.collage || "", "캠퍼스": t.campus || "", "학과": t.dept || "", "전공": t.major || "", "계열": t.cate || "",
       "검토위원": rev.name || "", "상태": status, "등록일시": updatedAt, "최종결과": finalResult, "최종검토의견": finalOpinion
     });
     const badgeClass = status === "제출완료" ? "ok" : "pending";
     const badgeStyle = status === "작성중" ? 'style="background:#fff3cd;color:#8a6d00;"' : "";
     const finalBadge = finalResult ? `<span class="badge ${finalResult==="적합"?"ok":finalResult==="부적합"?"bad":"pending"}">${finalResult}</span>` : "-";
     const tr = document.createElement("tr");
-    tr.innerHTML = `<td>${rseq}</td><td>${t.collage||""}</td><td>${t.campus||""}</td><td>${t.dept||""}</td><td>${t.major||""}</td><td>${t.cate||""}</td>
+    tr.innerHTML = `<td>${t.no||""}</td><td>${t.collage||""}</td><td>${t.campus||""}</td><td>${t.dept||""}</td><td>${t.major||""}</td><td>${t.cate||""}</td>
       <td>${rev.name||""}</td><td>${updatedAt||"-"}</td>
       <td><span class="badge ${badgeClass}" ${badgeStyle}>${status}</span></td>
       <td>${finalBadge}</td>
@@ -535,7 +533,7 @@ async function loadResults() {
     tbody.appendChild(tr);
   });
   if (!rows.length) {
-    tbody.innerHTML = `<tr><td colspan="12" style="text-align:center;color:#999;">조회된 검토목록이 없습니다.</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="13" style="text-align:center;color:#999;">조회된 검토목록이 없습니다.</td></tr>`;
   }
 }
 $("resultCourseFilter").addEventListener("change", loadResults);
