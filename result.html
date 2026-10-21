@@ -30,22 +30,29 @@
     body > *{ display:none !important; }
 
     /* ---- 조회 목록 출력 ---- */
-    #resultCard{ display:block !important; }
-    #resultCard.printing{ display:block !important; }
+    body.print-list .container{ display:block !important; }
     body.print-list #resultCard{ display:block !important; box-shadow:none !important; border:none !important; padding:0 !important; }
     body.print-list #resultCard > h2{ display:none !important; }
     body.print-list #resultCard .print-header{ display:block !important; }
     body.print-list #resultCard .row{ display:none !important; }
+    body.print-list .card:not(#resultCard){ display:none !important; }
 
     /* ---- 검토의견서 모달 출력 ---- */
-    body.print-modal #opinionModal{ display:block !important; position:static !important; background:none !important; padding:0 !important; }
+    body.print-modal #opinionModal{
+      display:block !important; position:static !important; inset:auto !important;
+      background:none !important; padding:0 !important; overflow:visible !important; height:auto !important;
+    }
 
-    #opinionModal .modal-box, #resultCard{
+    #opinionModal .modal-box{
+      box-shadow:none !important; max-height:none !important; height:auto !important; overflow:visible !important;
+      max-width:none !important; width:auto !important; border-radius:0 !important; background:#fff !important;
+    }
+    body.print-list #resultCard{
       box-shadow:none !important; max-height:none !important; max-width:none !important; width:auto !important;
       border-radius:0 !important; background:#fff !important;
     }
     #opinionModal .modal-head{ position:static !important; border-bottom:none !important; padding:0 !important; }
-    #opinionModal .modal-body{ padding:0 !important; }
+    #opinionModal .modal-body{ padding:0 !important; overflow:visible !important; }
 
     .no-print{ display:none !important; }
 
@@ -109,7 +116,7 @@
       <button class="btn secondary small" id="printBtn">출력(인쇄)</button>
     </div>
     <table id="resultTable">
-      <thead><tr><th>대학</th><th>캠퍼스</th><th>학과</th><th>전공</th><th>계열</th><th>검토위원</th><th>최종결과</th><th>검토의견서보기</th></tr></thead>
+      <thead><tr><th>대학</th><th>캠퍼스</th><th>학과</th><th>전공</th><th>계열</th><th>최종결과</th><th>검토의견서보기</th></tr></thead>
       <tbody></tbody>
     </table>
   </div>
@@ -133,9 +140,6 @@
       </div>
       <h3 class="print-sec-title" style="font-size:15px;color:#0f2c5c;margin:0 0 8px;">2027학년도 교육운영계획서 정보</h3>
       <table class="info-table" id="opinionTargetInfoTable"></table>
-
-      <h3 class="print-sec-title" style="font-size:15px;color:#0f2c5c;margin:0 0 8px;">검토위원 정보</h3>
-      <table class="info-table" id="opinionReviewerInfoTable"></table>
 
       <h3 class="print-sec-title" style="font-size:15px;color:#0f2c5c;margin:0 0 8px;">최종결과</h3>
       <table class="info-table" id="opinionFinalTable"></table>

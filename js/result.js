@@ -131,7 +131,7 @@ $("searchBtn").addEventListener("click", async () => {
     const sub = submissions[key];
     rows.push({
       "대학": t.collage || "", "캠퍼스": t.campus || "", "학과": t.dept || "", "전공": t.major || "", "계열": t.cate || "",
-      "검토위원": rev.name || "", "최종결과": (sub && sub.finalResult) || "미정",
+      "최종결과": (sub && sub.finalResult) || "미정",
       targetId: t.id, reviewerId: rev.id
     });
   });
@@ -145,7 +145,7 @@ function renderTable(rows) {
   const tbody = $("resultTable").querySelector("tbody");
   tbody.innerHTML = "";
   if (rows.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;color:#999;">조회된 결과가 없습니다.</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;color:#999;">조회된 결과가 없습니다.</td></tr>`;
     return;
   }
   rows.forEach(row => {
@@ -154,7 +154,7 @@ function renderTable(rows) {
       : row["최종결과"];
     const tr = document.createElement("tr");
     tr.innerHTML = `<td>${row["대학"]}</td><td>${row["캠퍼스"]}</td><td>${row["학과"]}</td><td>${row["전공"]}</td><td>${row["계열"]}</td>
-      <td>${row["검토위원"]}</td><td>${finalBadge}</td>
+      <td>${finalBadge}</td>
       <td><button class="btn small secondary" onclick="window.__viewOpinion('${row.targetId}','${row.reviewerId}')">검토의견서 보기</button></td>`;
     tbody.appendChild(tr);
   });
@@ -163,7 +163,7 @@ function renderTable(rows) {
 $("exportBtn").addEventListener("click", () => {
   const excelRows = lastRows.map(r => ({
     "대학": r["대학"], "캠퍼스": r["캠퍼스"], "학과": r["학과"], "전공": r["전공"], "계열": r["계열"],
-    "검토위원": r["검토위원"], "최종결과": r["최종결과"]
+    "최종결과": r["최종결과"]
   }));
   exportToExcel(excelRows, `검토결과조회_${$("courseSel").value || "전체"}.xlsx`);
 });
@@ -205,18 +205,6 @@ window.__viewOpinion = (targetId, reviewerId) => {
   $("opinionTargetInfoTable").innerHTML =
     `<thead><tr>${infoCols.map(c => `<th>${c[0]}</th>`).join("")}</tr></thead>
      <tbody><tr>${infoCols.map(c => `<td>${c[1]||"-"}</td>`).join("")}</tr></tbody>`;
-
-  const reviewerCols = [
-    ["검토위원", rev.name || ""],
-    ["소속대학", rev.univ || ""],
-    ["소속캠퍼스", rev.campus || ""],
-    ["소속학과", rev.dept || ""],
-    ["휴대폰번호", rev.phone || reviewerId || ""],
-    ["이메일", rev.email || ""]
-  ];
-  $("opinionReviewerInfoTable").innerHTML =
-    `<thead><tr>${reviewerCols.map(c => `<th>${c[0]}</th>`).join("")}</tr></thead>
-     <tbody><tr>${reviewerCols.map(c => `<td>${c[1]||"-"}</td>`).join("")}</tr></tbody>`;
 
   const sub = submissions[key] || {};
   const finalCols = [
