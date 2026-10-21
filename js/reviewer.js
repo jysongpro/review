@@ -107,13 +107,13 @@ async function loadAssigned() {
     }
 
     const tr = document.createElement("tr");
-    tr.innerHTML = `<td>${t.curri||t.course||""}</td><td>${t.collage||""}</td><td>${t.campus||""}</td><td>${t.dept||""}</td><td>${t.major||""}</td><td>${t.cate||""}</td>
+    tr.innerHTML = `<td>${count}</td><td>${t.curri||t.course||""}</td><td>${t.collage||""}</td><td>${t.campus||""}</td><td>${t.dept||""}</td><td>${t.major||""}</td><td>${t.cate||""}</td>
       <td>${statusCell}</td>
       <td><button class="btn small" data-id="${d.id}">검토하기</button></td>`;
     tbody.appendChild(tr);
   });
   if (count === 0) {
-    tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;color:#999;">배정된 교육운영계획서 검토 목록이 없습니다.</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="9" style="text-align:center;color:#999;">배정된 교육운영계획서 검토 목록이 없습니다.</td></tr>`;
   }
   tbody.querySelectorAll("button[data-id]").forEach(btn => {
     btn.addEventListener("click", () => openReviewPanel(btn.dataset.id));
