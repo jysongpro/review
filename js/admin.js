@@ -201,10 +201,40 @@ async function loadReviewerAssignOverview() {
 // (주의: 사이트가 하위 폴더(예: /review/)에서 서비스되므로 절대경로 "/Files/..."를 쓰면 안됨 — 404 원인)
 let _allTargetsCache = [];
 
+function uniqueSortedVals(values) {
+  return [...new Set(values.filter(v => v !== undefined && v !== null && v !== ""))]
+    .sort((a, b) => String(a).localeCompare(String(b), "ko"));
+}
+
+// 과정 필터 선택 시 해당 과정의 캠퍼스 목록을, 캠퍼스 선택 시 해당 과정+캠퍼스의 학과 목록을 연동해서 보여준다.
+// (메인화면 교육운영계획서검토 조회메뉴의 과정→대학→캠퍼스→학과 연동 방식과 동일한 방식)
+function refreshTargetCampusOptions() {
+  const course = $("targetCourseFilter").value;
+  const keep = $("targetCampusFilter").value;
+  const campuses = uniqueSortedVals(
+    _allTargetsCache.filter(r => !course || r.course === course).map(r => r.campus)
+  );
+  $("targetCampusFilter").innerHTML = `<option value="">전체</option>` +
+    campuses.map(c => `<option value="${c}">${c}</option>`).join("");
+  if (campuses.includes(keep)) $("targetCampusFilter").value = keep;
+}
+function refreshTargetDeptOptions() {
+  const course = $("targetCourseFilter").value;
+  const campus = $("targetCampusFilter").value;
+  const keep = $("targetDeptFilter").value;
+  const depts = uniqueSortedVals(
+    _allTargetsCache.filter(r => (!course || r.course === course) && (!campus || r.campus === campus)).map(r => r.dept)
+  );
+  $("targetDeptFilter").innerHTML = `<option value="">전체</option>` +
+    depts.map(d => `<option value="${d}">${d}</option>`).join("");
+  if (depts.includes(keep)) $("targetDeptFilter").value = keep;
+}
+
 async function loadTargets() {
   const snap = await getDocs(collection(db, "targets"));
   const filter = $("targetCourseFilter").value;
-  const search = ($("targetSearchInput").value || "").trim();
+  const campusFilter = $("targetCampusFilter").value;
+  const deptFilter = $("targetDeptFilter").value;
   const tbody = $("targetTable").querySelector("tbody");
   tbody.innerHTML = "";
   $("targetSelectForAssign").innerHTML = "";
@@ -214,12 +244,19 @@ async function loadTargets() {
   snap.forEach(d => rows.push({ id: d.id, ...d.data() }));
   rows.sort((a, b) => (Number(a.no) || 0) - (Number(b.no) || 0));
 
+  rows.forEach(r => _allTargetsCache.push(r));
+  refreshTargetCampusOptions();
+  refreshTargetDeptOptions();
+
+  // 필터링된 결과기준으로 순번(No)을 1부터 다시 부여한다.
+  let seq = 0;
   rows.forEach(r => {
-    _allTargetsCache.push(r);
     if (filter && r.course !== filter) return;
-    if (search && !((r.campus || "").includes(search) || (r.dept || "").includes(search))) return;
+    if (campusFilter && r.campus !== campusFilter) return;
+    if (deptFilter && r.dept !== deptFilter) return;
+    seq++;
     const tr = document.createElement("tr");
-    tr.innerHTML = `<td>${r.no||""}</td><td>${r.course||""}</td><td>${r.collage||""}</td><td>${r.campus||""}</td><td>${r.dept||""}</td><td>${r.major||""}</td><td>${r.cate||""}</td><td>${r.per||""}</td><td>${r.dn||""}</td><td>${r.reviewerAssigned||"-"}</td>
+    tr.innerHTML = `<td>${seq}</td><td>${r.course||""}</td><td>${r.collage||""}</td><td>${r.campus||""}</td><td>${r.dept||""}</td><td>${r.major||""}</td><td>${r.cate||""}</td><td>${r.per||""}</td><td>${r.dn||""}</td><td>${r.reviewerAssigned||"-"}</td>
       <td>${r.pdfUrl ? `<a href="${r.pdfUrl}" target="_blank">보기</a>` : "-"}</td>`;
     tbody.appendChild(tr);
 
@@ -229,8 +266,9 @@ async function loadTargets() {
     $("targetSelectForAssign").appendChild(op);
   });
 }
-$("targetCourseFilter").addEventListener("change", loadTargets);
-$("targetSearchInput").addEventListener("input", loadTargets);
+$("targetCourseFilter").addEventListener("change", () => { refreshTargetCampusOptions(); refreshTargetDeptOptions(); loadTargets(); });
+$("targetCampusFilter").addEventListener("change", () => { refreshTargetDeptOptions(); loadTargets(); });
+$("targetDeptFilter").addEventListener("change", loadTargets);
 
 $("uploadTargetBtn").addEventListener("click", async () => {
   const f = $("targetExcel").files[0];
