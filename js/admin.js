@@ -358,47 +358,57 @@ $("uploadAssignBtn").addEventListener("click", async () => {
 const PART_LABEL = { part1: "1. 교과과정개편 세부기준 준수 여부", part2: "2. 교육운영계획서 세부내용 검토" };
 
 async function loadItems() {
-  // 필터를 걸지 않고(과정 미선택 시) reviewItems 콜렉션의 모든 문서를 그대로 불러와 보여주어,
-  // 중복 저장된 항목까지 누락 없이 확인하고 관리자가 직접 삭제할 수 있도록 함
-  const snap = await getDocs(collection(db, "reviewItems"));
-  const filter = $("itemCourseFilter").value;
   const tbody1 = $("itemTablePart1").querySelector("tbody");
   const tbody2 = $("itemTablePart2").querySelector("tbody");
-  tbody1.innerHTML = ""; tbody2.innerHTML = "";
+  try {
+    // 필터를 걸지 않으면(과정 미선택 시) reviewItems 콜렉션의 모든 문서를 그대로 불러와 보여주어,
+    // 중복 저장된 항목까지 누락 없이 확인하고 관리자가 직접 삭제할 수 있도록 함
+    const snap = await getDocs(collection(db, "reviewItems"));
+    const filter = ($("itemCourseFilter").value || "").trim();
+    tbody1.innerHTML = ""; tbody2.innerHTML = "";
 
-  const rawRows = [];
-  snap.forEach(d => rawRows.push({ id: d.id, ...d.data() }));
-  // 화면에 보여지는 순서(과정+구분+mainNo 정렬)를 기준으로 순번을 새로 매김 (DB의 mainNo 값은 사용하지 않음)
-  const { sorted: rows, labelMap } = sortAndLabelItems(rawRows);
+    const rawRows = [];
+    snap.forEach(d => rawRows.push({ id: d.id, ...d.data(), course: (d.data().course || "").trim() }));
 
-  // 동일 과정+구분+검토문항(공백 제거 비교) 조합이 2건 이상이면 중복으로 판단
-  const dupKeyCount = {};
-  rows.forEach(r => {
-    const key = `${r.course}||${r.part}||${(r.question||"").trim().replace(/\s+/g, " ")}`;
-    dupKeyCount[key] = (dupKeyCount[key] || 0) + 1;
-  });
+    // 동일 과정+구분+검토문항(공백 제거 비교) 조합이 2건 이상이면 중복으로 판단 (전체 데이터 기준)
+    const dupKeyCount = {};
+    rawRows.forEach(r => {
+      const key = `${r.course}||${r.part}||${(r.question||"").trim().replace(/\s+/g, " ")}`;
+      dupKeyCount[key] = (dupKeyCount[key] || 0) + 1;
+    });
 
-  let count1 = 0, count2 = 0;
-  rows.forEach(r => {
-    if (filter && r.course !== filter) return;
-    const tbody = r.part === "part2" ? tbody2 : tbody1;
-    if (r.part === "part2") count2++; else count1++;
-    const key = `${r.course}||${r.part}||${(r.question||"").trim().replace(/\s+/g, " ")}`;
-    const isDup = dupKeyCount[key] > 1;
-    const tr = document.createElement("tr");
-    if (isDup) tr.style.background = "#ffecec";
-    tr.innerHTML = `<td>${labelMap.get(r.id)}</td><td>${r.course||""}</td>
-      <td>${isDup ? '<span class="badge bad" style="margin-right:6px;">중복</span>' : ""}${r.question||""}</td>
-      <td>
-        <button class="btn small secondary" onclick="window.__editItem('${r.id}')">수정</button>
-        <button class="btn small danger" onclick="window.__deleteItem('${r.id}')">삭제</button>
-      </td>`;
-    tbody.appendChild(tr);
-  });
-  if (!tbody1.children.length) tbody1.innerHTML = `<tr><td colspan="4" style="text-align:center;color:#999;">등록된 항목이 없습니다.</td></tr>`;
-  if (!tbody2.children.length) tbody2.innerHTML = `<tr><td colspan="4" style="text-align:center;color:#999;">등록된 항목이 없습니다.</td></tr>`;
-  $("part1Count").textContent = count1;
-  $("part2Count").textContent = count2;
+    // 화면에 표시될 필터 기준 항목만 먼저 걸러낸 뒤 그 결과에 대해서만 순번(1부터)을 매겨,
+    // 특정 과정(예: 학위전공심화과정)만 조회해도 항상 1번부터 정상적으로 보이도록 함
+    const filteredRows = rawRows.filter(r => !filter || r.course === filter);
+    const { sorted: rows, labelMap } = sortAndLabelItems(filteredRows);
+
+    let count1 = 0, count2 = 0;
+    rows.forEach(r => {
+      const tbody = r.part === "part2" ? tbody2 : tbody1;
+      if (r.part === "part2") count2++; else count1++;
+      const key = `${r.course}||${r.part}||${(r.question||"").trim().replace(/\s+/g, " ")}`;
+      const isDup = dupKeyCount[key] > 1;
+      const tr = document.createElement("tr");
+      tr.dataset.itemId = r.id;
+      if (isDup) tr.style.background = "#ffecec";
+      tr.innerHTML = `<td>${labelMap.get(r.id)}</td><td>${r.course||""}</td>
+        <td>${isDup ? '<span class="badge bad" style="margin-right:6px;">중복</span>' : ""}${r.question||""}</td>
+        <td>
+          <button class="btn small secondary" onclick="window.__editItem('${r.id}')">수정</button>
+          <button class="btn small danger" onclick="window.__deleteItem('${r.id}')">삭제</button>
+        </td>`;
+      tbody.appendChild(tr);
+    });
+    if (!tbody1.children.length) tbody1.innerHTML = `<tr><td colspan="4" style="text-align:center;color:#999;">등록된 항목이 없습니다.</td></tr>`;
+    if (!tbody2.children.length) tbody2.innerHTML = `<tr><td colspan="4" style="text-align:center;color:#999;">등록된 항목이 없습니다.</td></tr>`;
+    $("part1Count").textContent = count1;
+    $("part2Count").textContent = count2;
+  } catch (e) {
+    // 목록 조회 실패 시 화면이 조용히 비어 보이지 않고 원인을 바로 알 수 있도록 표시
+    const msg = `<tr><td colspan="4" style="text-align:center;color:#c0392b;">목록 불러오기 실패: ${e.message}</td></tr>`;
+    tbody1.innerHTML = msg; tbody2.innerHTML = msg;
+    toast($("itemAddMsg"), "목록 조회 중 오류가 발생했습니다: " + e.message, true);
+  }
 }
 $("itemCourseFilter").addEventListener("change", loadItems);
 $("refreshItemsBtn").addEventListener("click", loadItems);
@@ -411,8 +421,8 @@ async function nextMainNo(course, part) {
 }
 
 $("addItemBtn").addEventListener("click", async () => {
-  const course = $("itemCourseSelect").value;
-  const part = $("itemPartSelect").value;
+  const course = ($("itemCourseSelect").value || "").trim();
+  const part = ($("itemPartSelect").value || "").trim();
   const question = $("itemQuestion").value.trim();
   if (!course) return toast($("itemAddMsg"), "과정을 선택하세요.", true);
   if (!question) { toast($("itemAddMsg"), "검토문항을 입력하세요.", true); $("itemQuestion").focus(); return; }
@@ -420,19 +430,26 @@ $("addItemBtn").addEventListener("click", async () => {
   $("addItemBtn").disabled = true;
   try {
     const mainNo = await nextMainNo(course, part);
-    await addDoc(collection(db, "reviewItems"), { course, part, mainNo, field: "", question });
+    const ref = await addDoc(collection(db, "reviewItems"), { course, part, mainNo, field: "", question });
 
     // 다음 항목을 바로 이어서 입력할 수 있도록 입력란만 비우고(과정/구분은 유지) 포커스를 검토문항으로 이동
     $("itemQuestion").value = "";
     $("itemQuestion").focus();
 
-    toast($("itemAddMsg"), `${mainNo}번 항목으로 저장되었습니다. 계속해서 다음 항목을 입력하세요.`);
+    // 방금 저장한 과정으로 목록 필터를 항상 맞추어(값이 같아도 명시적으로 재설정) 바로 아래에 보이도록 처리
+    $("itemCourseFilter").value = course;
+    await loadItems();
 
-    // 방금 저장한 과정으로 목록 필터를 맞추어 바로 아래에 보이도록 처리
-    if ($("itemCourseFilter").value !== course) {
-      $("itemCourseFilter").value = course;
+    // 방금 추가된 항목이 실제로 화면에 나타났는지 확인해, 혹시 없다면 사용자에게 명확히 알림
+    const added = document.querySelector(`tr[data-item-id="${ref.id}"]`);
+    if (added) {
+      added.scrollIntoView({ behavior: "smooth", block: "center" });
+      added.style.outline = "2px solid #2a62e8";
+      setTimeout(() => { added.style.outline = ""; }, 1500);
+      toast($("itemAddMsg"), `${mainNo}번 항목으로 저장되었습니다. 계속해서 다음 항목을 입력하세요.`);
+    } else {
+      toast($("itemAddMsg"), `${mainNo}번 항목으로 저장되었지만 화면에 표시되지 않았습니다. 새로고침 버튼을 눌러주세요.`, true);
     }
-    loadItems();
   } catch (e) {
     toast($("itemAddMsg"), "저장 실패: " + e.message, true);
   } finally {
