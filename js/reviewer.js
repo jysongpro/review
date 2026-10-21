@@ -237,6 +237,9 @@ async function openReviewPanel(targetId) {
     const ex = existing[d.id];
     const tr = document.createElement("tr");
     tr.dataset.itemId = d.id;
+    tr.dataset.part = it.part || "part1";
+    const opinionMax = it.part === "part2" ? 1000 : 50;
+    const opinionRows = it.part === "part2" ? 4 : 2;
     tr.innerHTML = `
       <td>${label}</td>
       <td>${it.question}</td>
@@ -247,7 +250,7 @@ async function openReviewPanel(targetId) {
           <option value="부적합" ${ex && ex.result==="부적합" ? "selected":""}>부적합</option>
         </select>
       </td>
-      <td><textarea class="opinionInput" maxlength="50" rows="2" style="width:100%;resize:vertical;white-space:pre-wrap;word-break:break-all;" ${isSubmitted ? "disabled" : ""}>${ex ? (ex.opinion||"") : ""}</textarea></td>
+      <td><textarea class="opinionInput" maxlength="${opinionMax}" rows="${opinionRows}" style="width:100%;resize:vertical;white-space:pre-wrap;word-break:break-all;" ${isSubmitted ? "disabled" : ""}>${ex ? (ex.opinion||"") : ""}</textarea></td>
     `;
     return tr;
   }
@@ -288,7 +291,8 @@ async function openReviewPanel(targetId) {
     for (const row of trRows) {
       const itemId = row.dataset.itemId;
       const result = row.querySelector(".resultSelect").value;
-      const opinion = row.querySelector(".opinionInput").value.slice(0, 50);
+      const opinionMax = row.dataset.part === "part2" ? 1000 : 50;
+      const opinion = row.querySelector(".opinionInput").value.slice(0, opinionMax);
       if (!result && !opinion) continue;
       savedAny = true;
       const ex = existing[itemId];
@@ -301,7 +305,7 @@ async function openReviewPanel(targetId) {
       }
     }
     const finalResult = recomputeFinalResult();
-    const finalOpinion = $("finalOpinionInput").value.slice(0, 100);
+    const finalOpinion = $("finalOpinionInput").value.slice(0, 500);
     await setDoc(doc(db, "reviewSubmissions", submissionId(targetId, r.id)), {
       targetId, reviewerId: r.id,
       status: savedAny || subData.status === "draft" ? "draft" : (subData.status || "draft"),
