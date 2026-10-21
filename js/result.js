@@ -1,4 +1,4 @@
-import { db } from "./firebase-config.js";
+import { db, ALL_COURSES } from "./firebase-config.js";
 import { collection, getDocs } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import { exportToExcel, sortAndLabelItems } from "./common.js";
 
@@ -26,6 +26,15 @@ function normalizePhone(v) {
 function uniqueSorted(values) {
   return [...new Set(values.filter(v => v !== undefined && v !== null && v !== ""))]
     .sort((a, b) => String(a).localeCompare(String(b), "ko"));
+}
+
+// 대학 목록은 일반 가나다 순 정렬을 기본으로 하되, "특성화"/"법인부설" 가 포함된 대학명은 맨 하단으로 내린다.
+function uniqueSortedUniv(values) {
+  const uniq = [...new Set(values.filter(v => v !== undefined && v !== null && v !== ""))];
+  const isSpecial = v => /특성화|법인부설/.test(v);
+  const normal = uniq.filter(v => !isSpecial(v)).sort((a, b) => String(a).localeCompare(String(b), "ko"));
+  const special = uniq.filter(isSpecial).sort((a, b) => String(a).localeCompare(String(b), "ko"));
+  return [...normal, ...special];
 }
 
 function fillSelect(selectEl, values, withAll) {
@@ -61,7 +70,7 @@ function filteredTargets({ uptoCourse, uptoUniv, uptoCampus } = {}) {
 
 function refreshUniv() {
   const arr = filteredTargets({ uptoUniv: false, uptoCampus: false });
-  fillSelect($("univSel"), uniqueSorted(arr.map(t => t.collage)), false);
+  fillSelect($("univSel"), uniqueSortedUniv(arr.map(t => t.collage)), false);
 }
 function refreshCampus() {
   const arr = filteredTargets({ uptoCampus: false });
@@ -77,7 +86,9 @@ async function initFilters() {
   _allTargets = [];
   snap.forEach(d => _allTargets.push({ id: d.id, ...d.data() }));
 
-  const courses = uniqueSorted(_allTargets.map(t => t.course));
+  // 학위과정 → 직업교육과정 순(ALL_COURSES에 정의된 순서)으로 과정 목록을 정렬한다.
+  const existingCourses = new Set(_allTargets.map(t => t.course));
+  const courses = ALL_COURSES.filter(c => existingCourses.has(c));
   fillSelect($("courseSel"), courses, true);
   refreshUniv();
   refreshCampus();
