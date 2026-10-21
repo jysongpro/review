@@ -413,6 +413,27 @@ async function loadItems() {
 $("itemCourseFilter").addEventListener("change", loadItems);
 $("refreshItemsBtn").addEventListener("click", loadItems);
 
+$("exportItemsBtn").addEventListener("click", async () => {
+  try {
+    const snap = await getDocs(collection(db, "reviewItems"));
+    const filter = ($("itemCourseFilter").value || "").trim();
+    const rawRows = [];
+    snap.forEach(d => rawRows.push({ id: d.id, ...d.data(), course: (d.data().course || "").trim() }));
+    const filteredRows = rawRows.filter(r => !filter || r.course === filter);
+    const { sorted: rows, labelMap } = sortAndLabelItems(filteredRows);
+    if (!rows.length) return toast($("itemAddMsg"), "다운로드할 검토항목이 없습니다.", true);
+    const excelRows = rows.map(r => ({
+      "순번": labelMap.get(r.id),
+      "과정": r.course || "",
+      "검토구분": r.part === "part2" ? "2. 교육운영계획서 세부내용 검토" : "1. 교과과정개편 세부기준 준수 여부",
+      "검토문항": r.question || ""
+    }));
+    exportToExcel(excelRows, `검토항목_${filter || "전체"}.xlsx`);
+  } catch (e) {
+    toast($("itemAddMsg"), "다운로드 실패: " + e.message, true);
+  }
+});
+
 async function nextMainNo(course, part) {
   const snap = await getDocs(query(collection(db, "reviewItems"), where("course", "==", course), where("part", "==", part)));
   let max = 0;
