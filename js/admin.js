@@ -81,10 +81,12 @@ async function loadReviewers() {
   const snap = await getDocs(collection(db, "reviewers"));
   const tbody = $("reviewerTable").querySelector("tbody");
   tbody.innerHTML = "";
+  let rno = 0;
   snap.forEach(d => {
+    rno++;
     const r = d.data();
     const tr = document.createElement("tr");
-    tr.innerHTML = `<td>${d.id}</td><td>${r.name||""}</td><td>${r.univ||""}</td><td>${r.campus||""}</td><td>${r.dept||""}</td><td>${r.track||""}</td><td>${r.title||""}</td><td>${r.email||""}</td>
+    tr.innerHTML = `<td>${rno}</td><td>${d.id}</td><td>${r.name||""}</td><td>${r.univ||""}</td><td>${r.campus||""}</td><td>${r.dept||""}</td><td>${r.track||""}</td><td>${r.title||""}</td><td>${r.email||""}</td>
       <td>
         <button class="btn small secondary" onclick="window.__editReviewer('${d.id}')">수정</button>
         <button class="btn small danger" onclick="window.__deleteReviewer('${d.id}')">삭제</button>
@@ -510,16 +512,18 @@ async function loadResults() {
   });
   rows.sort((a, b) => (Number(a.t.no)||0) - (Number(b.t.no)||0));
 
+  let rseq = 0;
   rows.forEach(({ t, rev, status, updatedAt, finalResult, finalOpinion }) => {
+    rseq++;
     _allResultsCache.push({
-      "과정": t.course || "", "대학": t.collage || "", "캠퍼스": t.campus || "", "학과": t.dept || "", "전공": t.major || "", "계열": t.cate || "",
+      "No": rseq, "과정": t.course || "", "대학": t.collage || "", "캠퍼스": t.campus || "", "학과": t.dept || "", "전공": t.major || "", "계열": t.cate || "",
       "검토위원": rev.name || "", "상태": status, "등록일시": updatedAt, "최종결과": finalResult, "최종검토의견": finalOpinion
     });
     const badgeClass = status === "제출완료" ? "ok" : "pending";
     const badgeStyle = status === "작성중" ? 'style="background:#fff3cd;color:#8a6d00;"' : "";
     const finalBadge = finalResult ? `<span class="badge ${finalResult==="적합"?"ok":finalResult==="부적합"?"bad":"pending"}">${finalResult}</span>` : "-";
     const tr = document.createElement("tr");
-    tr.innerHTML = `<td>${t.collage||""}</td><td>${t.campus||""}</td><td>${t.dept||""}</td><td>${t.major||""}</td><td>${t.cate||""}</td>
+    tr.innerHTML = `<td>${rseq}</td><td>${t.collage||""}</td><td>${t.campus||""}</td><td>${t.dept||""}</td><td>${t.major||""}</td><td>${t.cate||""}</td>
       <td>${rev.name||""}</td><td>${updatedAt||"-"}</td>
       <td><span class="badge ${badgeClass}" ${badgeStyle}>${status}</span></td>
       <td>${finalBadge}</td>
@@ -531,7 +535,7 @@ async function loadResults() {
     tbody.appendChild(tr);
   });
   if (!rows.length) {
-    tbody.innerHTML = `<tr><td colspan="11" style="text-align:center;color:#999;">조회된 검토목록이 없습니다.</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="12" style="text-align:center;color:#999;">조회된 검토목록이 없습니다.</td></tr>`;
   }
 }
 $("resultCourseFilter").addEventListener("change", loadResults);
