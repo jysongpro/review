@@ -137,17 +137,35 @@ async function submitFinal(targetId) {
     collection(db, "reviewResults"), where("targetId", "==", targetId), where("reviewerId", "==", r.id)
   ));
   const opinionByItem = {};
-  resultsSnap.forEach(d => { opinionByItem[d.data().itemId] = (d.data().opinion || "").trim(); });
+  const resultByItem = {};
+  resultsSnap.forEach(d => {
+    opinionByItem[d.data().itemId] = (d.data().opinion || "").trim();
+    resultByItem[d.data().itemId] = d.data().result || "";
+  });
 
   const missing = [];
   itemsSnap.forEach(d => {
     const it = d.data();
-    if (!opinionByItem[d.id]) {
+    if (!opinionByItem[d.id] || !resultByItem[d.id]) {
       missing.push(`${it.mainNo||""}`);
     }
   });
   if (missing.length) {
-    alert(`모든 검토항목의 검토의견을 입력해야 최종제출할 수 있습니다.\n(미입력 항목: ${missing.join(", ")})\n\n"검토하기"를 눌러 먼저 저장해 주세요.`);
+    alert(`모든 검토항목의 검토결과(적합/부적합)와 검토의견을 입력해야 최종제출할 수 있습니다.\n(미입력 항목: ${missing.join(", ")})\n\n"검토하기"를 눌러 먼저 저장해 주세요.`);
+    return;
+  }
+
+  // 검토결과(적합/부적합)와 최종검토의견이 모두 입력되어야 최종제출 가능
+  const subSnap = await getDoc(doc(db, "reviewSubmissions", submissionId(targetId, r.id)));
+  const subData = subSnap.exists() ? subSnap.data() : {};
+  const finalResult = subData.finalResult || "";
+  const finalOpinion = (subData.finalOpinion || "").trim();
+  if (finalResult !== "적합" && finalResult !== "부적합") {
+    alert("검토결과(적합/부적합)가 확정되지 않았습니다.\n모든 검토항목에 결과를 선택하고 \"저장\" 버튼을 눌러 저장한 뒤 다시 시도해 주세요.");
+    return;
+  }
+  if (!finalOpinion) {
+    alert("최종검토의견을 입력하고 \"저장\" 버튼을 눌러 저장한 뒤 최종제출해 주세요.");
     return;
   }
 
