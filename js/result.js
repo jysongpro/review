@@ -167,7 +167,22 @@ $("exportBtn").addEventListener("click", () => {
   }));
   exportToExcel(excelRows, `검토결과조회_${$("courseSel").value || "전체"}.xlsx`);
 });
-$("printBtn").addEventListener("click", () => window.print());
+function fmtNow() {
+  const d = new Date();
+  const pad = n => String(n).padStart(2, "0");
+  return `\uCD9C\uB825\uC77C: ${d.getFullYear()}.${pad(d.getMonth()+1)}.${pad(d.getDate())}`;
+}
+
+$("printBtn").addEventListener("click", () => {
+  const course = $("courseSel").value || "\uC804\uCCB4";
+  const univ = $("univSel").value ? ` · \uB300\uD559: ${$("univSel").value}` : "";
+  const campus = $("campusSel").value ? ` · \uCE84\uD37C\uC2A4: ${$("campusSel").value}` : "";
+  const dept = $("deptSel").value ? ` · \uD559\uACFC: ${$("deptSel").value}` : "";
+  $("listPrintMeta").textContent = `\uACFC\uC815: ${course}${univ}${campus}${dept}  |  ${fmtNow()}  |  \uCD1D ${lastRows.length}\uAC74`;
+  document.body.classList.add("print-list");
+  window.print();
+});
+window.addEventListener("afterprint", () => document.body.classList.remove("print-list", "print-modal"));
 
 // ---- 검토의견서 보기 모달 ----
 window.__viewOpinion = (targetId, reviewerId) => {
@@ -234,3 +249,8 @@ window.__viewOpinion = (targetId, reviewerId) => {
 
 $("opinionModalClose").addEventListener("click", () => $("opinionModal").classList.remove("open"));
 $("opinionModal").addEventListener("click", (e) => { if (e.target.id === "opinionModal") $("opinionModal").classList.remove("open"); });
+$("opinionPrintBtn").addEventListener("click", () => {
+  $("opinionPrintMeta").textContent = fmtNow();
+  document.body.classList.add("print-modal");
+  window.print();
+});

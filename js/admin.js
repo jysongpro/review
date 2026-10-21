@@ -219,7 +219,7 @@ async function loadTargets() {
     if (filter && r.course !== filter) return;
     if (search && !((r.campus || "").includes(search) || (r.dept || "").includes(search))) return;
     const tr = document.createElement("tr");
-    tr.innerHTML = `<td>${r.no||""}</td><td>${r.collage||""}</td><td>${r.campus||""}</td><td>${r.dept||""}</td><td>${r.major||""}</td><td>${r.course||""}</td><td>${r.cate||""}</td><td>${r.per||""}</td><td>${r.dn||""}</td><td>${r.reviewerAssigned||"-"}</td>
+    tr.innerHTML = `<td>${r.no||""}</td><td>${r.course||""}</td><td>${r.collage||""}</td><td>${r.campus||""}</td><td>${r.dept||""}</td><td>${r.major||""}</td><td>${r.cate||""}</td><td>${r.per||""}</td><td>${r.dn||""}</td><td>${r.reviewerAssigned||"-"}</td>
       <td>${r.pdfUrl ? `<a href="${r.pdfUrl}" target="_blank">보기</a>` : "-"}</td>`;
     tbody.appendChild(tr);
 
@@ -654,6 +654,7 @@ window.__viewOpinion = async (targetId, reviewerId) => {
   $("opinionModal").style.display = "flex";
 };
 $("opinionModalClose").addEventListener("click", () => { $("opinionModal").style.display = "none"; });
+$("opinionPrintBtn").addEventListener("click", () => window.print());
 $("opinionModal").addEventListener("click", (e) => { if (e.target.id === "opinionModal") $("opinionModal").style.display = "none"; });
 
 // ---- 제출완료된 검토의견서를 다시 작성할 수 있도록 잠금 해제 ----
