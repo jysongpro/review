@@ -392,7 +392,7 @@ async function loadItems() {
       tr.dataset.itemId = r.id;
       if (isDup) tr.style.background = "#ffecec";
       tr.innerHTML = `<td>${labelMap.get(r.id)}</td><td>${r.course||""}</td>
-        <td style="white-space:pre-line;text-align:left;">${isDup ? '<span class="badge bad" style="margin-right:6px;">중복</span>' : ""}${escapeHtml(r.question||"")}</td>
+        <td style="white-space:pre-line;text-align:left;">${isDup ? '<span class="badge bad" style="margin-right:6px;">중복</span>' : ""}${formatQuestion(r.question)}</td>
         <td>
           <button class="btn small secondary" onclick="window.__editItem('${r.id}')">수정</button>
           <button class="btn small danger" onclick="window.__deleteItem('${r.id}')">삭제</button>
@@ -480,6 +480,11 @@ $("addItemBtn").addEventListener("click", async () => {
 
 function escapeHtml(s) {
   return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
+// 검토문항 내 괄호 "(…)" 안 내용을 bold로 강조표시 (검토위원 화면과 동일한 규칙)
+function formatQuestion(q) {
+  const escaped = escapeHtml(q || "");
+  return escaped.replace(/\(([^()]*)\)/g, (m, inner) => `(<b>${inner}</b>)`);
 }
 
 // 검토문항은 줄바꿈(Enter)이 포함된 여러 줄 텍스트일 수 있어, prompt() 대신 텍스트영역(textarea) 모달로 수정
@@ -744,7 +749,7 @@ window.__viewOpinion = async (targetId, reviewerId) => {
     const tbody = it.part === "part2" ? tbody2 : tbody1;
     const tr = document.createElement("tr");
     const badge = r && r.result ? `<span class="badge ${r.result==="적합"?"ok":"bad"}">${r.result}</span>` : "-";
-    tr.innerHTML = `<td>${itemLabelMap.get(it.id)}</td><td style="white-space:pre-line;text-align:left;">${escapeHtml(it.question||"")}</td><td>${badge}</td><td style="white-space:pre-line;text-align:left;">${escapeHtml(r ? (r.opinion||"") : "")}</td>`;
+    tr.innerHTML = `<td>${itemLabelMap.get(it.id)}</td><td style="white-space:pre-line;text-align:left;">${formatQuestion(it.question)}</td><td>${badge}</td><td style="white-space:pre-line;text-align:left;">${escapeHtml(r ? (r.opinion||"") : "")}</td>`;
     tbody.appendChild(tr);
   });
   if (!tbody1.children.length) tbody1.innerHTML = `<tr><td colspan="4" style="text-align:center;color:#999;">항목 없음</td></tr>`;
