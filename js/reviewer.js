@@ -183,6 +183,26 @@ $("reviewModal").addEventListener("click", (e) => { if (e.target.id === "reviewM
 
 // PDF는 모달 안에 표시하지 않고 "새 창에서 보기" 링크(target=_blank)로만 별도 창에서 열린다.
 
+// 검토 모달의 가로 폭은 브라우저 기본 resize(가로) 핸들로 사용자가 직접 조절한다. 조절한 폭은 localStorage에 저장해 다음에 열 때도 유지된다.
+(function initReviewModalResize() {
+  const box = document.querySelector(".modal-box.review-modal-box");
+  if (!box) return;
+  const key = "reviewModalWidth";
+  const saved = localStorage.getItem(key);
+  if (saved) box.style.width = saved + "px";
+
+  if (typeof ResizeObserver !== "undefined") {
+    let saveTimer = null;
+    const ro = new ResizeObserver((entries) => {
+      clearTimeout(saveTimer);
+      saveTimer = setTimeout(() => {
+        localStorage.setItem(key, Math.round(entries[0].contentRect.width));
+      }, 300);
+    });
+    ro.observe(box);
+  }
+})();
+
 async function openReviewPanel(targetId) {
   const r = getReviewerSession();
   const tSnap = await getDoc(doc(db, "targets", targetId));

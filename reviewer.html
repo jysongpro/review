@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>검토위원 - 교육운영계획서 검토 지원도구</title>
-<link rel="stylesheet" href="css/style.css?v=1.40.0">
+<link rel="stylesheet" href="css/style.css?v=1.41.0">
 <style>
   .modal-overlay{
     display:none; position:fixed; inset:0; z-index:1000;
@@ -33,8 +33,12 @@
   .info-table th,.info-table td{border:1px solid #dde5f0;padding:9px 10px;font-size:16px;text-align:center;}
   .info-table th{background:#e6effa;color:#0f2c5c;font-weight:700;white-space:nowrap;}
 
-  /* 모달 자체도 크게 쓸 수 있도록 폭 확장 */
-  .modal-box.review-modal-box{max-width:1100px;}
+  /* 모달 기본 크기를 기존 대비 2배 수준으로 크게, 브라우저 기본 resize(가로)로 사용자가 직접 가로폭을 늘리거나 줄일 수 있다. */
+  .modal-box.review-modal-box{
+    width:2000px; max-width:97vw; min-width:700px;
+    resize:horizontal; overflow:auto;
+    margin:0 auto;
+  }
 
   /* 검토폼 박스: PDF는 별도 창으로만 열리므로 모달 안에 평표시 추가 보드는 두지 않음 */
   .pdf-actions{margin:0 0 14px;}
@@ -113,10 +117,10 @@
       <h3 style="font-size:19px;color:#0f2c5c;margin:18px 0 8px;">1. 교과과정개편 세부기준 준수 여부</h3>
           <table id="reviewItemsTablePart1">
             <colgroup>
-              <col style="width:60px;">
-              <col style="width:40%;">
-              <col style="width:12%;">
-              <col style="width:40%;">
+              <col style="width:48px;">
+              <col style="width:44%;">
+              <col style="width:8%;">
+              <col style="width:44%;">
             </colgroup>
             <thead><tr><th>순번</th><th>검토문항</th><th>검토결과</th><th>검토의견</th></tr></thead>
             <tbody></tbody>
@@ -125,10 +129,10 @@
       <h3 style="font-size:19px;color:#0f2c5c;margin:22px 0 8px;">2. 교육운영계획서 세부내용 검토</h3>
           <table id="reviewItemsTablePart2">
             <colgroup>
-              <col style="width:60px;">
-              <col style="width:40%;">
-              <col style="width:12%;">
-              <col style="width:40%;">
+              <col style="width:48px;">
+              <col style="width:44%;">
+              <col style="width:8%;">
+              <col style="width:44%;">
             </colgroup>
             <thead><tr><th>순번</th><th>검토문항</th><th>검토결과</th><th>검토의견</th></tr></thead>
             <tbody></tbody>
@@ -155,6 +159,6 @@
   </div>
 </div>
 
-<script type="module" src="js/reviewer.js?v=1.40.0"></script>
+<script type="module" src="js/reviewer.js?v=1.41.0"></script>
 </body>
 </html>
