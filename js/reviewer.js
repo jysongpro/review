@@ -181,6 +181,61 @@ function closeModal() { $("reviewModal").classList.remove("open"); }
 $("modalCloseBtn").addEventListener("click", closeModal);
 $("reviewModal").addEventListener("click", (e) => { if (e.target.id === "reviewModal") closeModal(); });
 
+// 좌측(PDF) 패널 폭을 마우스 드래그로 조절
+(function initReviewResizer() {
+  const resizer = $("reviewResizer");
+  const left = $("reviewLeft");
+  const split = $("reviewSplit");
+  if (!resizer || !left || !split) return;
+
+  const savedWidth = localStorage.getItem("reviewLeftWidth");
+  if (savedWidth) left.style.width = savedWidth + "px";
+
+  let dragging = false;
+  let startX = 0;
+  let startWidth = 0;
+
+  function onMove(e) {
+    if (!dragging) return;
+    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+    const delta = clientX - startX;
+    const splitRect = split.getBoundingClientRect();
+    const minWidth = 220;
+    const maxWidth = Math.max(minWidth, splitRect.width * 0.8);
+    let newWidth = startWidth + delta;
+    newWidth = Math.min(Math.max(newWidth, minWidth), maxWidth);
+    left.style.width = newWidth + "px";
+  }
+
+  function onUp() {
+    if (!dragging) return;
+    dragging = false;
+    resizer.classList.remove("dragging");
+    document.body.style.userSelect = "";
+    localStorage.setItem("reviewLeftWidth", parseInt(left.style.width, 10));
+    window.removeEventListener("mousemove", onMove);
+    window.removeEventListener("mouseup", onUp);
+    window.removeEventListener("touchmove", onMove);
+    window.removeEventListener("touchend", onUp);
+  }
+
+  function onDown(e) {
+    dragging = true;
+    resizer.classList.add("dragging");
+    document.body.style.userSelect = "none";
+    startX = e.touches ? e.touches[0].clientX : e.clientX;
+    startWidth = left.getBoundingClientRect().width;
+    window.addEventListener("mousemove", onMove);
+    window.addEventListener("mouseup", onUp);
+    window.addEventListener("touchmove", onMove, { passive: false });
+    window.addEventListener("touchend", onUp);
+    e.preventDefault();
+  }
+
+  resizer.addEventListener("mousedown", onDown);
+  resizer.addEventListener("touchstart", onDown, { passive: false });
+})();
+
 async function openReviewPanel(targetId) {
   const r = getReviewerSession();
   const tSnap = await getDoc(doc(db, "targets", targetId));
@@ -208,10 +263,16 @@ async function openReviewPanel(targetId) {
     $("pdfViewLink").href = t.pdfUrl;
     $("pdfDownloadLink").href = t.pdfUrl;
     $("pdfDownloadLink").setAttribute("download", t.filename || "");
+    $("pdfFrame").src = t.pdfUrl;
+    $("pdfFrame").style.display = "block";
+    $("pdfEmptyBox").style.display = "none";
   } else {
     $("pdfViewLink").style.display = "none";
     $("pdfDownloadLink").style.display = "none";
     $("pdfNone").style.display = "inline";
+    $("pdfFrame").src = "";
+    $("pdfFrame").style.display = "none";
+    $("pdfEmptyBox").style.display = "flex";
   };
 
   const subSnap = await getDoc(doc(db, "reviewSubmissions", submissionId(targetId, r.id)));

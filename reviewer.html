@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>검토위원 - 교육운영계획서 검토 지원도구</title>
-<link rel="stylesheet" href="css/style.css?v=1.20.0">
+<link rel="stylesheet" href="css/style.css?v=1.38.0">
 <style>
   .modal-overlay{
     display:none; position:fixed; inset:0; z-index:1000;
@@ -32,6 +32,26 @@
   .info-table{width:100%;border-collapse:collapse;margin-bottom:16px;}
   .info-table th,.info-table td{border:1px solid #dde5f0;padding:9px 10px;font-size:13px;text-align:center;}
   .info-table th{background:#e6effa;color:#0f2c5c;font-weight:700;white-space:nowrap;}
+
+  .modal-box.review-modal-box{max-width:1500px;}
+  .review-split{display:flex; align-items:stretch; gap:0;}
+  .review-left{
+    width:420px; min-width:220px; max-width:80%; flex-shrink:0;
+    display:flex; flex-direction:column; padding-right:14px;
+  }
+  .review-left .pdf-actions{margin:0 0 10px;}
+  #pdfFrame{
+    flex:1; width:100%; min-height:70vh; border:1px solid #dde5f0; border-radius:8px; background:#f7f9fc;
+  }
+  .pdf-empty{
+    flex:1; display:flex; align-items:center; justify-content:center;
+    color:#99a3b0; font-size:13px; border:1px dashed #dde5f0; border-radius:8px; min-height:70vh;
+  }
+  .review-resizer{
+    width:8px; margin:0 6px; cursor:col-resize; background:#eef2f8; border-radius:4px; flex-shrink:0;
+  }
+  .review-resizer:hover, .review-resizer.dragging{background:#c7d6ea;}
+  .review-right{flex:1; min-width:0;}
 </style>
 </head>
 <body>
@@ -71,68 +91,77 @@
 
 <!-- 교육운영계획서 검토하기: 별도 창(모달)으로 표시 -->
 <div class="modal-overlay" id="reviewModal">
-  <div class="modal-box">
+  <div class="modal-box review-modal-box">
     <div class="modal-head">
       <h2>교육운영계획서 검토</h2>
       <button class="modal-close" id="modalCloseBtn">✕</button>
     </div>
     <div class="modal-body">
-      <table class="info-table" id="reviewInfoTable"></table>
+      <div class="review-split" id="reviewSplit">
+        <div class="review-left" id="reviewLeft">
+          <p class="pdf-actions">
+            <a id="pdfViewLink" href="#" target="_blank" class="btn secondary small">새 창에서 보기</a>
+            <a id="pdfDownloadLink" href="#" download class="btn small">PDF 다운로드</a>
+            <span id="pdfNone" style="display:none;color:#999;font-size:13px;">업로드된 PDF가 없습니다.</span>
+          </p>
+          <iframe id="pdfFrame" style="display:none;"></iframe>
+          <div id="pdfEmptyBox" class="pdf-empty">PDF가 없습니다.</div>
+        </div>
+        <div class="review-resizer" id="reviewResizer" title="드래그하여 폭 조절"></div>
+        <div class="review-right">
+          <table class="info-table" id="reviewInfoTable"></table>
 
-      <p>
-        <a id="pdfViewLink" href="#" target="_blank" class="btn secondary small">운영계획서 PDF 보기</a>
-        <a id="pdfDownloadLink" href="#" download class="btn small">운영계획서 PDF 다운로드</a>
-        <span id="pdfNone" style="display:none;color:#999;font-size:13px;">업로드된 PDF가 없습니다.</span>
-      </p>
-      <p id="submittedNotice" style="display:none;color:#c62828;font-weight:700;font-size:13px;margin:10px 0 0;">
-        ✔ 최종 제출이 완료되어 더 이상 수정할 수 없습니다.
-      </p>
+          <p id="submittedNotice" style="display:none;color:#c62828;font-weight:700;font-size:13px;margin:10px 0 0;">
+            ✔ 최종 제출이 완료되어 더 이상 수정할 수 없습니다.
+          </p>
 
-      <h3 style="font-size:15px;color:#0f2c5c;margin:18px 0 8px;">1. 교과과정개편 세부기준 준수 여부</h3>
-      <table id="reviewItemsTablePart1">
-        <colgroup>
-          <col style="width:60px;">
-          <col style="width:40%;">
-          <col style="width:12%;">
-          <col style="width:40%;">
-        </colgroup>
-        <thead><tr><th>순번</th><th>검토문항</th><th>검토결과</th><th>검토의견</th></tr></thead>
-        <tbody></tbody>
-      </table>
+          <h3 style="font-size:15px;color:#0f2c5c;margin:18px 0 8px;">1. 교과과정개편 세부기준 준수 여부</h3>
+          <table id="reviewItemsTablePart1">
+            <colgroup>
+              <col style="width:60px;">
+              <col style="width:40%;">
+              <col style="width:12%;">
+              <col style="width:40%;">
+            </colgroup>
+            <thead><tr><th>순번</th><th>검토문항</th><th>검토결과</th><th>검토의견</th></tr></thead>
+            <tbody></tbody>
+          </table>
 
-      <h3 style="font-size:15px;color:#0f2c5c;margin:22px 0 8px;">2. 교육운영계획서 세부내용 검토</h3>
-      <table id="reviewItemsTablePart2">
-        <colgroup>
-          <col style="width:60px;">
-          <col style="width:40%;">
-          <col style="width:12%;">
-          <col style="width:40%;">
-        </colgroup>
-        <thead><tr><th>순번</th><th>검토문항</th><th>검토결과</th><th>검토의견</th></tr></thead>
-        <tbody></tbody>
-      </table>
+          <h3 style="font-size:15px;color:#0f2c5c;margin:22px 0 8px;">2. 교육운영계획서 세부내용 검토</h3>
+          <table id="reviewItemsTablePart2">
+            <colgroup>
+              <col style="width:60px;">
+              <col style="width:40%;">
+              <col style="width:12%;">
+              <col style="width:40%;">
+            </colgroup>
+            <thead><tr><th>순번</th><th>검토문항</th><th>검토결과</th><th>검토의견</th></tr></thead>
+            <tbody></tbody>
+          </table>
 
-      <div id="finalBox" style="margin-top:22px;padding:16px;background:#f4f7fb;border:1px solid #dde5f0;border-radius:10px;">
-        <div class="row">
-          <div class="field" style="max-width:200px;">
-            <label>최종결과</label>
-            <input id="finalResultInput" type="text" readonly style="font-weight:700;text-align:center;">
+          <div id="finalBox" style="margin-top:22px;padding:16px;background:#f4f7fb;border:1px solid #dde5f0;border-radius:10px;">
+            <div class="row">
+              <div class="field" style="max-width:200px;">
+                <label>최종결과</label>
+                <input id="finalResultInput" type="text" readonly style="font-weight:700;text-align:center;">
+              </div>
+            </div>
+            <div class="field" style="margin-top:10px;">
+              <label>최종검토의견</label>
+              <textarea id="finalOpinionInput" maxlength="500" rows="4" style="width:100%;resize:vertical;"></textarea>
+            </div>
           </div>
-        </div>
-        <div class="field" style="margin-top:10px;">
-          <label>최종검토의견</label>
-          <textarea id="finalOpinionInput" maxlength="500" rows="4" style="width:100%;resize:vertical;"></textarea>
-        </div>
-      </div>
 
-      <div id="reviewActionBtns" style="margin-top:14px;">
-        <button class="btn" id="saveReviewBtn">저장</button>
+          <div id="reviewActionBtns" style="margin-top:14px;">
+            <button class="btn" id="saveReviewBtn">저장</button>
+          </div>
+          <span id="saveMsg" class="msg"></span>
+        </div>
       </div>
-      <span id="saveMsg" class="msg"></span>
     </div>
   </div>
 </div>
 
-<script type="module" src="js/reviewer.js?v=1.20.0"></script>
+<script type="module" src="js/reviewer.js?v=1.38.0"></script>
 </body>
 </html>
