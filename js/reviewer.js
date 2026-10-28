@@ -181,59 +181,38 @@ function closeModal() { $("reviewModal").classList.remove("open"); }
 $("modalCloseBtn").addEventListener("click", closeModal);
 $("reviewModal").addEventListener("click", (e) => { if (e.target.id === "reviewModal") closeModal(); });
 
-// 좌측(PDF) 패널 폭을 마우스 드래그로 조절
-(function initReviewResizer() {
-  const resizer = $("reviewResizer");
-  const left = $("reviewLeft");
-  const split = $("reviewSplit");
-  if (!resizer || !left || !split) return;
+// PDF뷰어와 검토폼은 각각 독립된 박스로, 브라우저 기본 resize 핸들(우하단 코너)로 사용자가 직접 크기를 조절한다.
+// 조절한 크기는 localStorage에 저장해 다음에 열 떄도 유지된다.
+(function initResizablePanels() {
+  const panels = [
+    { el: $("pdfPanel"), key: "reviewPdfPanelSize" },
+    { el: $("formPanel"), key: "reviewFormPanelSize" }
+  ];
 
-  const savedWidth = localStorage.getItem("reviewLeftWidth");
-  if (savedWidth) left.style.width = savedWidth + "px";
+  panels.forEach(({ el, key }) => {
+    if (!el) return;
 
-  let dragging = false;
-  let startX = 0;
-  let startWidth = 0;
+    const saved = localStorage.getItem(key);
+    if (saved) {
+      try {
+        const { w, h } = JSON.parse(saved);
+        if (w) el.style.width = w + "px";
+        if (h) el.style.height = h + "px";
+      } catch (e) { /* ignore 무효값 */ }
+    }
 
-  function onMove(e) {
-    if (!dragging) return;
-    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-    const delta = clientX - startX;
-    const splitRect = split.getBoundingClientRect();
-    const minWidth = 220;
-    const maxWidth = Math.max(minWidth, splitRect.width * 0.8);
-    let newWidth = startWidth + delta;
-    newWidth = Math.min(Math.max(newWidth, minWidth), maxWidth);
-    left.style.width = newWidth + "px";
-  }
-
-  function onUp() {
-    if (!dragging) return;
-    dragging = false;
-    resizer.classList.remove("dragging");
-    document.body.style.userSelect = "";
-    localStorage.setItem("reviewLeftWidth", parseInt(left.style.width, 10));
-    window.removeEventListener("mousemove", onMove);
-    window.removeEventListener("mouseup", onUp);
-    window.removeEventListener("touchmove", onMove);
-    window.removeEventListener("touchend", onUp);
-  }
-
-  function onDown(e) {
-    dragging = true;
-    resizer.classList.add("dragging");
-    document.body.style.userSelect = "none";
-    startX = e.touches ? e.touches[0].clientX : e.clientX;
-    startWidth = left.getBoundingClientRect().width;
-    window.addEventListener("mousemove", onMove);
-    window.addEventListener("mouseup", onUp);
-    window.addEventListener("touchmove", onMove, { passive: false });
-    window.addEventListener("touchend", onUp);
-    e.preventDefault();
-  }
-
-  resizer.addEventListener("mousedown", onDown);
-  resizer.addEventListener("touchstart", onDown, { passive: false });
+    if (typeof ResizeObserver !== "undefined") {
+      let saveTimer = null;
+      const ro = new ResizeObserver((entries) => {
+        clearTimeout(saveTimer);
+        saveTimer = setTimeout(() => {
+          const rect = entries[0].contentRect;
+          localStorage.setItem(key, JSON.stringify({ w: Math.round(rect.width), h: Math.round(rect.height) }));
+        }, 300);
+      });
+      ro.observe(el);
+    }
+  });
 })();
 
 async function openReviewPanel(targetId) {

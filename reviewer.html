@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>검토위원 - 교육운영계획서 검토 지원도구</title>
-<link rel="stylesheet" href="css/style.css?v=1.38.0">
+<link rel="stylesheet" href="css/style.css?v=1.39.0">
 <style>
   .modal-overlay{
     display:none; position:fixed; inset:0; z-index:1000;
@@ -33,25 +33,39 @@
   .info-table th,.info-table td{border:1px solid #dde5f0;padding:9px 10px;font-size:13px;text-align:center;}
   .info-table th{background:#e6effa;color:#0f2c5c;font-weight:700;white-space:nowrap;}
 
-  .modal-box.review-modal-box{max-width:1500px;}
-  .review-split{display:flex; align-items:stretch; gap:0;}
-  .review-left{
-    width:420px; min-width:220px; max-width:80%; flex-shrink:0;
-    display:flex; flex-direction:column; padding-right:14px;
+  /* 모달 자체도 크게 쓸 수 있도록 폭 확장 */
+  .modal-box.review-modal-box{max-width:96vw; max-height:calc(100vh - 30px);}
+
+  /* PDF 뷰어와 검토폼을 서로 독립된 박스로 분리. 각각 네이티브 크기조절(resize) 핸들(우하단 코너)로 사용자가 직접 크기를 늘리거나 줄일 수 있다. */
+  .review-panels{display:flex; align-items:flex-start; gap:16px; flex-wrap:wrap;}
+  .review-panel{
+    border:1px solid #dde5f0; border-radius:10px; background:#fff; padding:12px;
+    box-sizing:border-box;
   }
-  .review-left .pdf-actions{margin:0 0 10px;}
+  .review-panel-head{
+    display:flex; align-items:center; justify-content:space-between; margin-bottom:8px;
+  }
+  .review-panel-head b{color:#0f2c5c; font-size:14px;}
+
+  /* PDF 뷰어 패널: 가로/세로 자유 조절 */
+  #pdfPanel{
+    width:460px; height:640px; min-width:260px; min-height:300px; max-width:90vw; max-height:85vh;
+    resize:both; overflow:hidden; display:flex; flex-direction:column;
+  }
   #pdfFrame{
-    flex:1; width:100%; min-height:70vh; border:1px solid #dde5f0; border-radius:8px; background:#f7f9fc;
+    flex:1; width:100%; border:1px solid #dde5f0; border-radius:8px; background:#f7f9fc;
   }
   .pdf-empty{
     flex:1; display:flex; align-items:center; justify-content:center;
-    color:#99a3b0; font-size:13px; border:1px dashed #dde5f0; border-radius:8px; min-height:70vh;
+    color:#99a3b0; font-size:13px; border:1px dashed #dde5f0; border-radius:8px;
   }
-  .review-resizer{
-    width:8px; margin:0 6px; cursor:col-resize; background:#eef2f8; border-radius:4px; flex-shrink:0;
+
+  /* 검토폼 패널: 가로/세로 자유 조절, 기본값을 더 크게 설정해 넣은 내용을 정상적으로 표시 */
+  #formPanel{
+    width:760px; min-width:420px; max-width:92vw; height:auto; max-height:85vh;
+    resize:both; overflow-y:auto; overflow-x:hidden; flex:1;
   }
-  .review-resizer:hover, .review-resizer.dragging{background:#c7d6ea;}
-  .review-right{flex:1; min-width:0;}
+  .resize-hint{color:#9aa6b4; font-size:12px;}
 </style>
 </head>
 <body>
@@ -97,8 +111,12 @@
       <button class="modal-close" id="modalCloseBtn">✕</button>
     </div>
     <div class="modal-body">
-      <div class="review-split" id="reviewSplit">
-        <div class="review-left" id="reviewLeft">
+      <div class="review-panels">
+        <div class="review-panel" id="pdfPanel">
+          <div class="review-panel-head">
+            <b>운영계획서 PDF</b>
+            <span class="resize-hint">우하단 모서리를 드래그하면 크기를 조절할 수 있습니다</span>
+          </div>
           <p class="pdf-actions">
             <a id="pdfViewLink" href="#" target="_blank" class="btn secondary small">새 창에서 보기</a>
             <a id="pdfDownloadLink" href="#" download class="btn small">PDF 다운로드</a>
@@ -107,8 +125,11 @@
           <iframe id="pdfFrame" style="display:none;"></iframe>
           <div id="pdfEmptyBox" class="pdf-empty">PDF가 없습니다.</div>
         </div>
-        <div class="review-resizer" id="reviewResizer" title="드래그하여 폭 조절"></div>
-        <div class="review-right">
+        <div class="review-panel" id="formPanel">
+          <div class="review-panel-head">
+            <b>검토폼</b>
+            <span class="resize-hint">우하단 모서리를 드래그하면 크기를 조절할 수 있습니다</span>
+          </div>
           <table class="info-table" id="reviewInfoTable"></table>
 
           <p id="submittedNotice" style="display:none;color:#c62828;font-weight:700;font-size:13px;margin:10px 0 0;">
@@ -162,6 +183,6 @@
   </div>
 </div>
 
-<script type="module" src="js/reviewer.js?v=1.38.0"></script>
+<script type="module" src="js/reviewer.js?v=1.39.0"></script>
 </body>
 </html>
