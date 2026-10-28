@@ -181,39 +181,7 @@ function closeModal() { $("reviewModal").classList.remove("open"); }
 $("modalCloseBtn").addEventListener("click", closeModal);
 $("reviewModal").addEventListener("click", (e) => { if (e.target.id === "reviewModal") closeModal(); });
 
-// PDF뷰어와 검토폼은 각각 독립된 박스로, 브라우저 기본 resize 핸들(우하단 코너)로 사용자가 직접 크기를 조절한다.
-// 조절한 크기는 localStorage에 저장해 다음에 열 떄도 유지된다.
-(function initResizablePanels() {
-  const panels = [
-    { el: $("pdfPanel"), key: "reviewPdfPanelSize" },
-    { el: $("formPanel"), key: "reviewFormPanelSize" }
-  ];
-
-  panels.forEach(({ el, key }) => {
-    if (!el) return;
-
-    const saved = localStorage.getItem(key);
-    if (saved) {
-      try {
-        const { w, h } = JSON.parse(saved);
-        if (w) el.style.width = w + "px";
-        if (h) el.style.height = h + "px";
-      } catch (e) { /* ignore 무효값 */ }
-    }
-
-    if (typeof ResizeObserver !== "undefined") {
-      let saveTimer = null;
-      const ro = new ResizeObserver((entries) => {
-        clearTimeout(saveTimer);
-        saveTimer = setTimeout(() => {
-          const rect = entries[0].contentRect;
-          localStorage.setItem(key, JSON.stringify({ w: Math.round(rect.width), h: Math.round(rect.height) }));
-        }, 300);
-      });
-      ro.observe(el);
-    }
-  });
-})();
+// PDF는 모달 안에 표시하지 않고 "새 창에서 보기" 링크(target=_blank)로만 별도 창에서 열린다.
 
 async function openReviewPanel(targetId) {
   const r = getReviewerSession();
@@ -242,16 +210,10 @@ async function openReviewPanel(targetId) {
     $("pdfViewLink").href = t.pdfUrl;
     $("pdfDownloadLink").href = t.pdfUrl;
     $("pdfDownloadLink").setAttribute("download", t.filename || "");
-    $("pdfFrame").src = t.pdfUrl;
-    $("pdfFrame").style.display = "block";
-    $("pdfEmptyBox").style.display = "none";
   } else {
     $("pdfViewLink").style.display = "none";
     $("pdfDownloadLink").style.display = "none";
     $("pdfNone").style.display = "inline";
-    $("pdfFrame").src = "";
-    $("pdfFrame").style.display = "none";
-    $("pdfEmptyBox").style.display = "flex";
   };
 
   const subSnap = await getDoc(doc(db, "reviewSubmissions", submissionId(targetId, r.id)));

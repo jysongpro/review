@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>검토위원 - 교육운영계획서 검토 지원도구</title>
-<link rel="stylesheet" href="css/style.css?v=1.39.0">
+<link rel="stylesheet" href="css/style.css?v=1.40.0">
 <style>
   .modal-overlay{
     display:none; position:fixed; inset:0; z-index:1000;
@@ -30,42 +30,30 @@
   }
   .modal-body{padding:20px 24px 26px;}
   .info-table{width:100%;border-collapse:collapse;margin-bottom:16px;}
-  .info-table th,.info-table td{border:1px solid #dde5f0;padding:9px 10px;font-size:13px;text-align:center;}
+  .info-table th,.info-table td{border:1px solid #dde5f0;padding:9px 10px;font-size:16px;text-align:center;}
   .info-table th{background:#e6effa;color:#0f2c5c;font-weight:700;white-space:nowrap;}
 
   /* 모달 자체도 크게 쓸 수 있도록 폭 확장 */
-  .modal-box.review-modal-box{max-width:96vw; max-height:calc(100vh - 30px);}
+  .modal-box.review-modal-box{max-width:1100px;}
 
-  /* PDF 뷰어와 검토폼을 서로 독립된 박스로 분리. 각각 네이티브 크기조절(resize) 핸들(우하단 코너)로 사용자가 직접 크기를 늘리거나 줄일 수 있다. */
-  .review-panels{display:flex; align-items:flex-start; gap:16px; flex-wrap:wrap;}
-  .review-panel{
-    border:1px solid #dde5f0; border-radius:10px; background:#fff; padding:12px;
-    box-sizing:border-box;
-  }
-  .review-panel-head{
-    display:flex; align-items:center; justify-content:space-between; margin-bottom:8px;
-  }
-  .review-panel-head b{color:#0f2c5c; font-size:14px;}
+  /* 검토폼 박스: PDF는 별도 창으로만 열리므로 모달 안에 평표시 추가 보드는 두지 않음 */
+  .pdf-actions{margin:0 0 14px;}
 
-  /* PDF 뷰어 패널: 가로/세로 자유 조절 */
-  #pdfPanel{
-    width:460px; height:640px; min-width:260px; min-height:300px; max-width:90vw; max-height:85vh;
-    resize:both; overflow:hidden; display:flex; flex-direction:column;
-  }
-  #pdfFrame{
-    flex:1; width:100%; border:1px solid #dde5f0; border-radius:8px; background:#f7f9fc;
-  }
-  .pdf-empty{
-    flex:1; display:flex; align-items:center; justify-content:center;
-    color:#99a3b0; font-size:13px; border:1px dashed #dde5f0; border-radius:8px;
-  }
-
-  /* 검토폼 패널: 가로/세로 자유 조절, 기본값을 더 크게 설정해 넣은 내용을 정상적으로 표시 */
-  #formPanel{
-    width:760px; min-width:420px; max-width:92vw; height:auto; max-height:85vh;
-    resize:both; overflow-y:auto; overflow-x:hidden; flex:1;
-  }
-  .resize-hint{color:#9aa6b4; font-size:12px;}
+  /* 검토위원 메뉴 전체 폰트를 2단계(약 +2pt) 크게 */
+  body{font-size:16px;}
+  header.topbar h1{font-size:22px !important;}
+  .admin-btn{font-size:16px !important;}
+  h2{font-size:22px !important;}
+  h3{font-size:19px !important;}
+  table{font-size:16px !important;}
+  .btn{font-size:18px !important;}
+  .btn.small{font-size:15px !important;}
+  input,select,textarea{font-size:18px !important;}
+  label{font-size:18px !important;}
+  .msg{font-size:17px !important;}
+  .login-box h2{font-size:23px !important;}
+  .login-box p{font-size:19px !important;}
+  .badge{font-size:15px !important;}
 </style>
 </head>
 <body>
@@ -111,32 +99,18 @@
       <button class="modal-close" id="modalCloseBtn">✕</button>
     </div>
     <div class="modal-body">
-      <div class="review-panels">
-        <div class="review-panel" id="pdfPanel">
-          <div class="review-panel-head">
-            <b>운영계획서 PDF</b>
-            <span class="resize-hint">우하단 모서리를 드래그하면 크기를 조절할 수 있습니다</span>
-          </div>
-          <p class="pdf-actions">
-            <a id="pdfViewLink" href="#" target="_blank" class="btn secondary small">새 창에서 보기</a>
-            <a id="pdfDownloadLink" href="#" download class="btn small">PDF 다운로드</a>
-            <span id="pdfNone" style="display:none;color:#999;font-size:13px;">업로드된 PDF가 없습니다.</span>
-          </p>
-          <iframe id="pdfFrame" style="display:none;"></iframe>
-          <div id="pdfEmptyBox" class="pdf-empty">PDF가 없습니다.</div>
-        </div>
-        <div class="review-panel" id="formPanel">
-          <div class="review-panel-head">
-            <b>검토폼</b>
-            <span class="resize-hint">우하단 모서리를 드래그하면 크기를 조절할 수 있습니다</span>
-          </div>
-          <table class="info-table" id="reviewInfoTable"></table>
+      <p class="pdf-actions">
+        <a id="pdfViewLink" href="#" target="_blank" rel="noopener" class="btn secondary small">운영계획서 PDF 새 창에서 보기</a>
+        <a id="pdfDownloadLink" href="#" download class="btn small">PDF 다운로드</a>
+        <span id="pdfNone" style="display:none;color:#999;font-size:15px;">업로드된 PDF가 없습니다.</span>
+      </p>
+      <table class="info-table" id="reviewInfoTable"></table>
 
-          <p id="submittedNotice" style="display:none;color:#c62828;font-weight:700;font-size:13px;margin:10px 0 0;">
-            ✔ 최종 제출이 완료되어 더 이상 수정할 수 없습니다.
-          </p>
+      <p id="submittedNotice" style="display:none;color:#c62828;font-weight:700;font-size:16px;margin:10px 0 0;">
+        ✔ 최종 제출이 완료되어 더 이상 수정할 수 없습니다.
+      </p>
 
-          <h3 style="font-size:15px;color:#0f2c5c;margin:18px 0 8px;">1. 교과과정개편 세부기준 준수 여부</h3>
+      <h3 style="font-size:19px;color:#0f2c5c;margin:18px 0 8px;">1. 교과과정개편 세부기준 준수 여부</h3>
           <table id="reviewItemsTablePart1">
             <colgroup>
               <col style="width:60px;">
@@ -148,7 +122,7 @@
             <tbody></tbody>
           </table>
 
-          <h3 style="font-size:15px;color:#0f2c5c;margin:22px 0 8px;">2. 교육운영계획서 세부내용 검토</h3>
+      <h3 style="font-size:19px;color:#0f2c5c;margin:22px 0 8px;">2. 교육운영계획서 세부내용 검토</h3>
           <table id="reviewItemsTablePart2">
             <colgroup>
               <col style="width:60px;">
@@ -160,29 +134,27 @@
             <tbody></tbody>
           </table>
 
-          <div id="finalBox" style="margin-top:22px;padding:16px;background:#f4f7fb;border:1px solid #dde5f0;border-radius:10px;">
-            <div class="row">
-              <div class="field" style="max-width:200px;">
-                <label>최종결과</label>
-                <input id="finalResultInput" type="text" readonly style="font-weight:700;text-align:center;">
-              </div>
-            </div>
-            <div class="field" style="margin-top:10px;">
-              <label>최종검토의견</label>
-              <textarea id="finalOpinionInput" maxlength="500" rows="4" style="width:100%;resize:vertical;"></textarea>
-            </div>
+      <div id="finalBox" style="margin-top:22px;padding:16px;background:#f4f7fb;border:1px solid #dde5f0;border-radius:10px;">
+        <div class="row">
+          <div class="field" style="max-width:220px;">
+            <label>최종결과</label>
+            <input id="finalResultInput" type="text" readonly style="font-weight:700;text-align:center;">
           </div>
-
-          <div id="reviewActionBtns" style="margin-top:14px;">
-            <button class="btn" id="saveReviewBtn">저장</button>
-          </div>
-          <span id="saveMsg" class="msg"></span>
+        </div>
+        <div class="field" style="margin-top:10px;">
+          <label>최종검토의견</label>
+          <textarea id="finalOpinionInput" maxlength="500" rows="4" style="width:100%;resize:vertical;"></textarea>
         </div>
       </div>
+
+      <div id="reviewActionBtns" style="margin-top:14px;">
+        <button class="btn" id="saveReviewBtn">저장</button>
+      </div>
+      <span id="saveMsg" class="msg"></span>
     </div>
   </div>
 </div>
 
-<script type="module" src="js/reviewer.js?v=1.39.0"></script>
+<script type="module" src="js/reviewer.js?v=1.40.0"></script>
 </body>
 </html>
