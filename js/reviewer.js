@@ -254,6 +254,15 @@ async function openReviewPanel(targetId) {
   const tbody2 = $("reviewItemsTablePart2").querySelector("tbody");
   tbody1.innerHTML = ""; tbody2.innerHTML = "";
 
+  // 검토문항 내 괄호 "(…)" 안 내용을 bold로 강조표시 (예: (전체 편성학점))
+  function escapeHtml(s) {
+    return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  }
+  function formatQuestion(q) {
+    const escaped = escapeHtml(q || "");
+    return escaped.replace(/\(([^()]*)\)/g, (m, inner) => `(<b>${inner}</b>)`);
+  }
+
   function renderRow(d, label) {
     const it = d.data();
     const ex = existing[d.id];
@@ -264,7 +273,7 @@ async function openReviewPanel(targetId) {
     const opinionRows = it.part === "part2" ? 4 : 2;
     tr.innerHTML = `
       <td>${label}</td>
-      <td>${it.question}</td>
+      <td style="white-space:pre-line;text-align:left;">${formatQuestion(it.question)}</td>
       <td>
         <select class="resultSelect" ${isSubmitted ? "disabled" : ""}>
           <option value="">선택</option>
