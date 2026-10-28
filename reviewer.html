@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>검토위원 - 교육운영계획서 검토 지원도구</title>
-<link rel="stylesheet" href="css/style.css?v=1.44.0">
+<link rel="stylesheet" href="css/style.css?v=1.45.0">
 <style>
   .modal-overlay{
     display:none; position:fixed; inset:0; z-index:1000;
@@ -35,10 +35,20 @@
 
   /* 모달 기본 크기를 기존 대비 2배 수준으로 크게, 브라우저 기본 resize(가로)로 사용자가 직접 가로폭을 늘리거나 줄일 수 있다. */
   .modal-box.review-modal-box{
-    width:2000px; max-width:97vw; min-width:700px;
+    width:min(2000px, 97vw); max-width:97vw; min-width:700px;
     resize:horizontal; overflow:auto;
     margin:0 auto;
   }
+  /* PC 해상도/저장된 폭 값 차이로 화면이 작게 보이는 문제 방지: 전체화면 토글 */
+  .modal-box.review-modal-box.fullscreen{
+    width:97vw !important; max-width:97vw !important;
+    height:calc(100vh - 30px) !important; max-height:calc(100vh - 30px) !important;
+  }
+  #modalFullscreenBtn{
+    border:none;background:#eef2f8;color:#334;
+    padding:6px 12px;border-radius:8px;cursor:pointer;font-size:14px;margin-right:8px;
+  }
+  #modalFullscreenBtn:hover{background:#dbe6f5;}
 
   /* 검토폼 박스: PDF는 별도 창으로만 열리므로 모달 안에 평표시 추가 보드는 두지 않음 */
   .pdf-actions{margin:0 0 14px;}
@@ -100,7 +110,10 @@
   <div class="modal-box review-modal-box">
     <div class="modal-head">
       <h2>교육운영계획서 검토</h2>
-      <button class="modal-close" id="modalCloseBtn">✕</button>
+      <div>
+        <button id="modalFullscreenBtn" type="button">⛶ 전체화면</button>
+        <button class="modal-close" id="modalCloseBtn">✕</button>
+      </div>
     </div>
     <div class="modal-body">
       <p class="pdf-actions">
@@ -163,6 +176,6 @@
   </div>
 </div>
 
-<script type="module" src="js/reviewer.js?v=1.44.0"></script>
+<script type="module" src="js/reviewer.js?v=1.45.0"></script>
 </body>
 </html>

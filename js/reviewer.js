@@ -184,22 +184,42 @@ $("reviewModal").addEventListener("click", (e) => { if (e.target.id === "reviewM
 // PDF는 모달 안에 표시하지 않고 "새 창에서 보기" 링크(target=_blank)로만 별도 창에서 열린다.
 
 // 검토 모달의 가로 폭은 브라우저 기본 resize(가로) 핸들로 사용자가 직접 조절한다. 조절한 폭은 localStorage에 저장해 다음에 열 때도 유지된다.
+// PC마다 해상도가 달라 예전에 저장된 폭이 현재 화면보다 지나치게 작게 적용되는 문제를 막기 위해, 불러올 때 최소값(1200px, 화면 폭의 70%) 미만이면 무시한다.
 (function initReviewModalResize() {
   const box = document.querySelector(".modal-box.review-modal-box");
   if (!box) return;
   const key = "reviewModalWidth";
-  const saved = localStorage.getItem(key);
-  if (saved) box.style.width = saved + "px";
+  const saved = parseInt(localStorage.getItem(key), 10);
+  const minSafeWidth = Math.min(1200, window.innerWidth * 0.7);
+  if (saved && saved >= minSafeWidth) {
+    box.style.width = saved + "px";
+  } else {
+    localStorage.removeItem(key);
+  }
 
   if (typeof ResizeObserver !== "undefined") {
     let saveTimer = null;
     const ro = new ResizeObserver((entries) => {
+      if (box.classList.contains("fullscreen")) return;
       clearTimeout(saveTimer);
       saveTimer = setTimeout(() => {
         localStorage.setItem(key, Math.round(entries[0].contentRect.width));
       }, 300);
     });
     ro.observe(box);
+  }
+
+  // 전체화면 토글: 일부 PC에서 화면이 작게 보이는 문제를 사용자가 즉시 해결할 수 있도록 제공
+  const fsBtn = document.getElementById("modalFullscreenBtn");
+  const fsKey = "reviewModalFullscreen";
+  function applyFullscreen(on) {
+    box.classList.toggle("fullscreen", on);
+    if (fsBtn) fsBtn.textContent = on ? "⤡ 원래 크기" : "⛶ 전체화면";
+    localStorage.setItem(fsKey, on ? "1" : "0");
+  }
+  if (fsBtn) {
+    applyFullscreen(localStorage.getItem(fsKey) === "1");
+    fsBtn.addEventListener("click", () => applyFullscreen(!box.classList.contains("fullscreen")));
   }
 })();
 
