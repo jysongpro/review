@@ -4,6 +4,15 @@ import { exportToExcel, sortAndLabelItems } from "./common.js";
 
 const $ = (id) => document.getElementById(id);
 
+// 검토문항 표시 일관화: HTML 이스케이프 + 괄호 "(…)" 안 내용 bold (admin.js/reviewer.js와 동일 규칙)
+function escapeHtml(s) {
+  return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
+function formatQuestion(q) {
+  const escaped = escapeHtml(q || "");
+  return escaped.replace(/\(([^()]*)\)/g, (m, inner) => `(<b>${inner}</b>)`);
+}
+
 // =========================================================================
 // 조회 조건(과정/대학/캠퍼스/학과)은 고정 목록이 아니라, 실제 업로드된
 // 교육운영계획서 검토목록(targets 컬렉션)을 분석해 실존하는 값만 옵션으로 만든다.
@@ -237,7 +246,7 @@ window.__viewOpinion = (targetId, reviewerId) => {
     const tbody = it.part === "part2" ? tbody2 : tbody1;
     const tr = document.createElement("tr");
     const badge = r && r.result ? `<span class="badge ${r.result==="적합"?"ok":"bad"}">${r.result}</span>` : "-";
-    tr.innerHTML = `<td>${itemLabelMap.get(it.id)}</td><td>${it.question||""}</td><td>${badge}</td><td>${r ? (r.opinion||"") : ""}</td>`;
+    tr.innerHTML = `<td>${itemLabelMap.get(it.id)}</td><td style="white-space:pre-line;text-align:left;">${formatQuestion(it.question)}</td><td>${badge}</td><td style="white-space:pre-line;text-align:left;">${escapeHtml(r ? (r.opinion||"") : "")}</td>`;
     tbody.appendChild(tr);
   });
   if (!tbody1.children.length) tbody1.innerHTML = `<tr><td colspan="4" style="text-align:center;color:#999;">항목 없음</td></tr>`;
