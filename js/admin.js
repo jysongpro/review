@@ -392,7 +392,7 @@ async function loadItems() {
       tr.dataset.itemId = r.id;
       if (isDup) tr.style.background = "#ffecec";
       tr.innerHTML = `<td>${labelMap.get(r.id)}</td><td>${r.course||""}</td>
-        <td>${isDup ? '<span class="badge bad" style="margin-right:6px;">중복</span>' : ""}${r.question||""}</td>
+        <td style="white-space:pre-line;text-align:left;">${isDup ? '<span class="badge bad" style="margin-right:6px;">중복</span>' : ""}${escapeHtml(r.question||"")}</td>
         <td>
           <button class="btn small secondary" onclick="window.__editItem('${r.id}')">수정</button>
           <button class="btn small danger" onclick="window.__deleteItem('${r.id}')">삭제</button>
@@ -478,16 +478,37 @@ $("addItemBtn").addEventListener("click", async () => {
   }
 });
 
+function escapeHtml(s) {
+  return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
+
+// 검토문항은 줄바꿈(Enter)이 포함된 여러 줄 텍스트일 수 있어, prompt() 대신 텍스트영역(textarea) 모달로 수정
+ let __editItemId = null;
 window.__editItem = async (id) => {
   const snap = await getDoc(doc(db, "reviewItems", id));
   if (!snap.exists()) return;
   const it = snap.data();
-  const question = prompt("검토문항 수정", it.question || "");
-  if (question === null) return;
-  if (!question.trim()) return alert("검토문항은 비워둘 수 없습니다.");
-  await updateDoc(doc(db, "reviewItems", id), { question: question.trim() });
-  loadItems();
+  __editItemId = id;
+  $("itemEditTextarea").value = it.question || "";
+  $("itemEditModal").style.display = "flex";
+  $("itemEditTextarea").focus();
 };
+
+function closeItemEditModal() {
+  $("itemEditModal").style.display = "none";
+  __editItemId = null;
+}
+$("itemEditCloseBtn")?.addEventListener("click", closeItemEditModal);
+$("itemEditCancelBtn")?.addEventListener("click", closeItemEditModal);
+$("itemEditModal")?.addEventListener("click", (e) => { if (e.target.id === "itemEditModal") closeItemEditModal(); });
+$("itemEditSaveBtn")?.addEventListener("click", async () => {
+  if (!__editItemId) return;
+  const question = $("itemEditTextarea").value;
+  if (!question.trim()) return alert("검토문항은 비워둘 수 없습니다.");
+  await updateDoc(doc(db, "reviewItems", __editItemId), { question: question.trim() });
+  closeItemEditModal();
+  loadItems();
+});
 
 window.__deleteItem = async (id) => {
   if (!confirm("삭제하시겠습니까?")) return;
@@ -723,7 +744,7 @@ window.__viewOpinion = async (targetId, reviewerId) => {
     const tbody = it.part === "part2" ? tbody2 : tbody1;
     const tr = document.createElement("tr");
     const badge = r && r.result ? `<span class="badge ${r.result==="적합"?"ok":"bad"}">${r.result}</span>` : "-";
-    tr.innerHTML = `<td>${itemLabelMap.get(it.id)}</td><td>${it.question||""}</td><td>${badge}</td><td>${r ? (r.opinion||"") : ""}</td>`;
+    tr.innerHTML = `<td>${itemLabelMap.get(it.id)}</td><td style="white-space:pre-line;text-align:left;">${escapeHtml(it.question||"")}</td><td>${badge}</td><td style="white-space:pre-line;text-align:left;">${escapeHtml(r ? (r.opinion||"") : "")}</td>`;
     tbody.appendChild(tr);
   });
   if (!tbody1.children.length) tbody1.innerHTML = `<tr><td colspan="4" style="text-align:center;color:#999;">항목 없음</td></tr>`;

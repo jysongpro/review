@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>관리자 - 교육운영계획서 검토 지원도구</title>
-<link rel="stylesheet" href="css/style.css?v=1.20.0">
+<link rel="stylesheet" href="css/style.css?v=1.42.0">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
   @media print{
@@ -173,9 +173,9 @@
         </div>
       </div>
       <h3 style="font-size:14px;color:#0f2c5c;margin:18px 0 8px;">1. 교과과정개편 세부기준 준수 여부 (<span id="part1Count">0</span>건)</h3>
-      <table id="itemTablePart1"><thead><tr><th style="width:70px;">순번</th><th>과정</th><th>검토문항</th><th>관리</th></tr></thead><tbody></tbody></table>
+      <table id="itemTablePart1" style="table-layout:fixed;"><colgroup><col style="width:70px;"><col style="width:120px;"><col><col style="width:110px;"></colgroup><thead><tr><th>순번</th><th>과정</th><th style="white-space:normal;">검토문항</th><th>관리</th></tr></thead><tbody></tbody></table>
       <h3 style="font-size:14px;color:#0f2c5c;margin:22px 0 8px;">2. 교육운영계획서 세부내용 검토 (<span id="part2Count">0</span>건)</h3>
-      <table id="itemTablePart2"><thead><tr><th style="width:70px;">순번</th><th>과정</th><th>검토문항</th><th>관리</th></tr></thead><tbody></tbody></table>
+      <table id="itemTablePart2" style="table-layout:fixed;"><colgroup><col style="width:70px;"><col style="width:120px;"><col><col style="width:110px;"></colgroup><thead><tr><th>순번</th><th>과정</th><th style="white-space:normal;">검토문항</th><th>관리</th></tr></thead><tbody></tbody></table>
     </div>
   </section>
 
@@ -226,6 +226,24 @@
     </div>
   </div>
 
+  <!-- 검토문항 수정 모달 -->
+  <div class="modal-overlay" id="itemEditModal" style="display:none;position:fixed;inset:0;z-index:1100;background:rgba(10,20,40,.55);align-items:center;justify-content:center;">
+    <div class="modal-box" style="background:#fff;border-radius:14px;max-width:600px;width:92%;box-shadow:0 20px 60px rgba(0,0,0,.35);">
+      <div class="modal-head" style="display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid #dde5f0;">
+        <h2 style="margin:0;font-size:16px;color:#0f2c5c;">검토문항 수정</h2>
+        <button id="itemEditCloseBtn" style="border:none;background:#eef2f8;color:#334;width:30px;height:30px;border-radius:50%;cursor:pointer;font-size:15px;">✕</button>
+      </div>
+      <div class="modal-body" style="padding:18px 20px;">
+        <label style="display:block;font-size:13px;color:#555;margin-bottom:6px;">검토문항 (Enter로 줄바꿈 가능)</label>
+        <textarea id="itemEditTextarea" rows="6" style="width:100%;box-sizing:border-box;font-size:14px;padding:10px;border:1px solid #cdd8e8;border-radius:8px;resize:vertical;"></textarea>
+        <div style="margin-top:14px;text-align:right;">
+          <button id="itemEditCancelBtn" class="btn secondary small" style="margin-right:8px;">취소</button>
+          <button id="itemEditSaveBtn" class="btn small">저장</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- 비밀번호 변경 -->
   <section id="panel-settings" class="panel" style="display:none;">
     <div class="card" style="max-width:420px;">
@@ -237,6 +255,6 @@
   </section>
 </div>
 
-<script type="module" src="js/admin.js?v=1.20.0"></script>
+<script type="module" src="js/admin.js?v=1.42.0"></script>
 </body>
 </html>
