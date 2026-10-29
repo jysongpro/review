@@ -181,14 +181,14 @@ async function loadReviewerAssignOverview() {
     return;
   }
   const table = document.createElement("table");
-  table.innerHTML = `<thead><tr><th>휴대폰번호</th><th>성명</th><th>배정건수</th><th>배정된 검토대상(No / 과정 / 학과)</th></tr></thead><tbody></tbody>`;
+  table.innerHTML = `<thead><tr><th>휴대폰번호</th><th>성명</th><th>배정건수</th><th>배정된 검토대상(No / 캠퍼스 / 과정 / 학과 / 전공)</th></tr></thead><tbody></tbody>`;
   const tbody = table.querySelector("tbody");
   reviewersSnap.forEach(d => {
     const r = d.data();
     const list = targetsByPhone[d.id] || [];
     const listStr = list.length
       ? list.sort((a,b)=>(Number(a.no)||0)-(Number(b.no)||0))
-            .map(t => `[${t.no}] ${t.course||""} ${t.dept||""}`).join("<br>")
+            .map(t => `[${t.no}] ${t.campus||""} ${t.course||""} ${t.dept||""} ${t.major||""}`).join("<br>")
       : '<span style="color:#bbb;">미배정</span>';
     const tr = document.createElement("tr");
     tr.innerHTML = `<td>${d.id}</td><td>${r.name||""}</td><td>${list.length}</td><td>${listStr}</td>`;
