@@ -283,7 +283,7 @@ $("uploadTargetBtn").addEventListener("click", async () => {
       if (!no) continue;
       const filename = row["filename"] || "";
       const curri = row["curri"] || "";
-      await setDoc(doc(db, "targets", no), {
+      const docData = {
         no,
         univ: row["대학"] || row["univ"] || "한국폴리텍대학",
         collage: row["collage"] || "",
@@ -296,9 +296,15 @@ $("uploadTargetBtn").addEventListener("click", async () => {
         per: row["per"] || "",
         dn: row["dn"] || "",
         filename,
-        pdfUrl: filename ? `Files/${filename}` : "",
-        reviewerAssigned: row["담당검토위원"] ? String(row["담당검토위원"]).trim() : ""
-      }, { merge: true });
+        pdfUrl: filename ? `Files/${filename}` : ""
+      };
+      // '담당검토위원' 컬럼에 값이 있을 때만 갱신 — 값이 없으면 기존에 배정된
+      // reviewerAssigned를 지우지 않고 그대로 보존한다(merge:true라도 필드를
+      // 명시적으로 보내면 덮어써지므로, 아예 필드를 보내지 않아야 함).
+      if (row["담당검토위원"]) {
+        docData.reviewerAssigned = String(row["담당검토위원"]).trim();
+      }
+      await setDoc(doc(db, "targets", no), docData, { merge: true });
       count++;
     }
     toast($("targetUploadMsg"), `${count}건 저장 완료`);
