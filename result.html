@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>검토결과조회 - 교육운영계획서 검토 지원도구</title>
-<link rel="stylesheet" href="css/style.css?v=1.47.0">
+<link rel="stylesheet" href="css/style.css?v=1.49.0">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
   .modal-overlay{ display:none; position:fixed; inset:0; z-index:1000; background:rgba(10,20,40,.55);
@@ -95,13 +95,13 @@
 <div class="container">
   <div class="card">
     <h2>조회 조건</h2>
-    <div class="row">
+    <div class="row" style="align-items:flex-end;">
       <div class="field"><label>과정</label><select id="courseSel"><option value="">불러오는 중...</option></select></div>
       <div class="field"><label>대학</label><select id="univSel"><option value="">불러오는 중...</option></select></div>
       <div class="field"><label>캠퍼스</label><select id="campusSel"><option value="">불러오는 중...</option></select></div>
       <div class="field"><label>학과</label><select id="deptSel"><option value="">불러오는 중...</option></select></div>
+      <div class="field" style="margin-left:auto;"><label>&nbsp;</label><button class="btn" id="searchBtn">조회</button></div>
     </div>
-    <button class="btn" id="searchBtn">조회</button>
   </div>
 
   <div class="card" id="resultCard" style="display:none;">
@@ -154,6 +154,6 @@
   </div>
 </div>
 
-<script type="module" src="js/result.js?v=1.47.0"></script>
+<script type="module" src="js/result.js?v=1.49.0"></script>
 </body>
 </html>

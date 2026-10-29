@@ -29,7 +29,7 @@ let _allTargets = [];
 let _resultsContext = { targets: {}, reviewers: {}, items: {}, resultsByKey: {}, submissions: {} };
 
 function normalizePhone(v) {
-  return (v || "").toString().replace(/[^0-9]/g, "");
+  return (v || "").toString().replace(/[^0-9*]/g, "");
 }
 
 function uniqueSorted(values) {

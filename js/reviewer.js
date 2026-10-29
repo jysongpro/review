@@ -21,7 +21,7 @@ const $ = (id) => document.getElementById(id);
 // =========================================================================
 
 function normalizePhone(v) {
-  return (v || "").toString().replace(/[^0-9]/g, "");
+  return (v || "").toString().replace(/[^0-9*]/g, "");
 }
 
 async function findReviewerByPhone(phoneDigits) {

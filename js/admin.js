@@ -8,7 +8,7 @@ import {
 import { buildCourseOptions, parseExcelFile, exportToExcel, exportToExcelWithMerges, isAdminLoggedIn, setAdminLoggedIn, toast, sortAndLabelItems } from "./common.js";
 
 const $ = (id) => document.getElementById(id);
-function normalizePhone(v) { return (v || "").toString().replace(/[^0-9]/g, ""); }
+function normalizePhone(v) { return (v || "").toString().replace(/[^0-9*]/g, ""); }
 
 // 버튼 클릭 등에서 발생한 예외가 화면에 전혀 표시되지 않고 조용히 무시되는 것을 방지하기 위한 전역 오류 알림
 window.addEventListener("error", (ev) => {
