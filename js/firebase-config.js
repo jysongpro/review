@@ -51,3 +51,14 @@ export function courseCategory(course) {
 export function mapCurriToCourse(curri) {
   return (curri || "").toString().trim();
 }
+
+// PDF 저장 폴더(Files 하위 과정별 디렉토리) 매핑
+export const COURSE_FOLDER = {
+  "2년제학위과정": "1",
+  "학위전공심화과정": "2",
+  "전문기술": "3",
+  "일반계고위탁": "4",
+  "중장년특화장기": "5",
+  "하이테크": "6",
+  "기능장": "7"
+};
