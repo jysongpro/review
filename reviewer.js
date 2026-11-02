@@ -289,7 +289,7 @@ async function openReviewPanel(targetId) {
     const tr = document.createElement("tr");
     tr.dataset.itemId = d.id;
     tr.dataset.part = it.part || "part1";
-    const opinionMax = it.part === "part2" ? 1000 : 50;
+    const opinionMax = it.part === "part2" ? 1000 : 500;
     const opinionRows = it.part === "part2" ? 4 : 2;
     tr.innerHTML = `
       <td>${label}</td>
@@ -342,7 +342,7 @@ async function openReviewPanel(targetId) {
     for (const row of trRows) {
       const itemId = row.dataset.itemId;
       const result = row.querySelector(".resultSelect").value;
-      const opinionMax = row.dataset.part === "part2" ? 1000 : 50;
+      const opinionMax = row.dataset.part === "part2" ? 1000 : 500;
       const opinion = row.querySelector(".opinionInput").value.slice(0, opinionMax);
       if (!result && !opinion) continue;
       savedAny = true;
