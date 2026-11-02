@@ -1,8 +1,17 @@
-import { db } from "./firebase-config.js";
+import { db, ALL_COURSES } from "./firebase-config.js";
 import { collection, getDocs } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import { exportToExcel, sortAndLabelItems } from "./common.js";
 
 const $ = (id) => document.getElementById(id);
+
+// 검토문항 표시 일관화: HTML 이스케이프 + 괄호 "(…)" 안 내용 bold (admin.js/reviewer.js와 동일 규칙)
+function escapeHtml(s) {
+  return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
+function formatQuestion(q) {
+  const escaped = escapeHtml(q || "");
+  return escaped.replace(/\(([^()]*)\)/g, (m, inner) => `(<b>${inner}</b>)`);
+}
 
 // =========================================================================
 // 조회 조건(과정/대학/캠퍼스/학과)은 고정 목록이 아니라, 실제 업로드된
@@ -20,12 +29,21 @@ let _allTargets = [];
 let _resultsContext = { targets: {}, reviewers: {}, items: {}, resultsByKey: {}, submissions: {} };
 
 function normalizePhone(v) {
-  return (v || "").toString().replace(/[^0-9]/g, "");
+  return (v || "").toString().replace(/[^0-9*]/g, "");
 }
 
 function uniqueSorted(values) {
   return [...new Set(values.filter(v => v !== undefined && v !== null && v !== ""))]
     .sort((a, b) => String(a).localeCompare(String(b), "ko"));
+}
+
+// 대학 목록은 일반 가나다 순 정렬을 기본으로 하되, "특성화"/"법인부설" 가 포함된 대학명은 맨 하단으로 내린다.
+function uniqueSortedUniv(values) {
+  const uniq = [...new Set(values.filter(v => v !== undefined && v !== null && v !== ""))];
+  const isSpecial = v => /특성화|법인부설/.test(v);
+  const normal = uniq.filter(v => !isSpecial(v)).sort((a, b) => String(a).localeCompare(String(b), "ko"));
+  const special = uniq.filter(isSpecial).sort((a, b) => String(a).localeCompare(String(b), "ko"));
+  return [...normal, ...special];
 }
 
 function fillSelect(selectEl, values, withAll) {
@@ -61,7 +79,7 @@ function filteredTargets({ uptoCourse, uptoUniv, uptoCampus } = {}) {
 
 function refreshUniv() {
   const arr = filteredTargets({ uptoUniv: false, uptoCampus: false });
-  fillSelect($("univSel"), uniqueSorted(arr.map(t => t.collage)), false);
+  fillSelect($("univSel"), uniqueSortedUniv(arr.map(t => t.collage)), false);
 }
 function refreshCampus() {
   const arr = filteredTargets({ uptoCampus: false });
@@ -77,7 +95,9 @@ async function initFilters() {
   _allTargets = [];
   snap.forEach(d => _allTargets.push({ id: d.id, ...d.data() }));
 
-  const courses = uniqueSorted(_allTargets.map(t => t.course));
+  // 학위과정 → 직업교육과정 순(ALL_COURSES에 정의된 순서)으로 과정 목록을 정렬한다.
+  const existingCourses = new Set(_allTargets.map(t => t.course));
+  const courses = ALL_COURSES.filter(c => existingCourses.has(c));
   fillSelect($("courseSel"), courses, true);
   refreshUniv();
   refreshCampus();
@@ -131,7 +151,7 @@ $("searchBtn").addEventListener("click", async () => {
     const sub = submissions[key];
     rows.push({
       "대학": t.collage || "", "캠퍼스": t.campus || "", "학과": t.dept || "", "전공": t.major || "", "계열": t.cate || "",
-      "검토위원": rev.name || "", "최종결과": (sub && sub.finalResult) || "미정",
+      "최종결과": (sub && sub.finalResult) || "미정",
       targetId: t.id, reviewerId: rev.id
     });
   });
@@ -145,7 +165,7 @@ function renderTable(rows) {
   const tbody = $("resultTable").querySelector("tbody");
   tbody.innerHTML = "";
   if (rows.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;color:#999;">조회된 결과가 없습니다.</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;color:#999;">조회된 결과가 없습니다.</td></tr>`;
     return;
   }
   rows.forEach(row => {
@@ -154,7 +174,7 @@ function renderTable(rows) {
       : row["최종결과"];
     const tr = document.createElement("tr");
     tr.innerHTML = `<td>${row["대학"]}</td><td>${row["캠퍼스"]}</td><td>${row["학과"]}</td><td>${row["전공"]}</td><td>${row["계열"]}</td>
-      <td>${row["검토위원"]}</td><td>${finalBadge}</td>
+      <td>${finalBadge}</td>
       <td><button class="btn small secondary" onclick="window.__viewOpinion('${row.targetId}','${row.reviewerId}')">검토의견서 보기</button></td>`;
     tbody.appendChild(tr);
   });
@@ -163,7 +183,7 @@ function renderTable(rows) {
 $("exportBtn").addEventListener("click", () => {
   const excelRows = lastRows.map(r => ({
     "대학": r["대학"], "캠퍼스": r["캠퍼스"], "학과": r["학과"], "전공": r["전공"], "계열": r["계열"],
-    "검토위원": r["검토위원"], "최종결과": r["최종결과"]
+    "최종결과": r["최종결과"]
   }));
   exportToExcel(excelRows, `검토결과조회_${$("courseSel").value || "전체"}.xlsx`);
 });
@@ -206,18 +226,6 @@ window.__viewOpinion = (targetId, reviewerId) => {
     `<thead><tr>${infoCols.map(c => `<th>${c[0]}</th>`).join("")}</tr></thead>
      <tbody><tr>${infoCols.map(c => `<td>${c[1]||"-"}</td>`).join("")}</tr></tbody>`;
 
-  const reviewerCols = [
-    ["검토위원", rev.name || ""],
-    ["소속대학", rev.univ || ""],
-    ["소속캠퍼스", rev.campus || ""],
-    ["소속학과", rev.dept || ""],
-    ["휴대폰번호", rev.phone || reviewerId || ""],
-    ["이메일", rev.email || ""]
-  ];
-  $("opinionReviewerInfoTable").innerHTML =
-    `<thead><tr>${reviewerCols.map(c => `<th>${c[0]}</th>`).join("")}</tr></thead>
-     <tbody><tr>${reviewerCols.map(c => `<td>${c[1]||"-"}</td>`).join("")}</tr></tbody>`;
-
   const sub = submissions[key] || {};
   const finalCols = [
     ["최종결과", sub.finalResult || "미정"],
@@ -238,7 +246,7 @@ window.__viewOpinion = (targetId, reviewerId) => {
     const tbody = it.part === "part2" ? tbody2 : tbody1;
     const tr = document.createElement("tr");
     const badge = r && r.result ? `<span class="badge ${r.result==="적합"?"ok":"bad"}">${r.result}</span>` : "-";
-    tr.innerHTML = `<td>${itemLabelMap.get(it.id)}</td><td>${it.question||""}</td><td>${badge}</td><td>${r ? (r.opinion||"") : ""}</td>`;
+    tr.innerHTML = `<td>${itemLabelMap.get(it.id)}</td><td style="white-space:pre-line;text-align:left;">${formatQuestion(it.question)}</td><td>${badge}</td><td style="white-space:pre-line;text-align:left;">${escapeHtml(r ? (r.opinion||"") : "")}</td>`;
     tbody.appendChild(tr);
   });
   if (!tbody1.children.length) tbody1.innerHTML = `<tr><td colspan="4" style="text-align:center;color:#999;">항목 없음</td></tr>`;

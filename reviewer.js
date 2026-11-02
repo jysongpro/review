@@ -21,7 +21,7 @@ const $ = (id) => document.getElementById(id);
 // =========================================================================
 
 function normalizePhone(v) {
-  return (v || "").toString().replace(/[^0-9]/g, "");
+  return (v || "").toString().replace(/[^0-9*]/g, "");
 }
 
 async function findReviewerByPhone(phoneDigits) {
@@ -107,13 +107,13 @@ async function loadAssigned() {
     }
 
     const tr = document.createElement("tr");
-    tr.innerHTML = `<td>${t.curri||t.course||""}</td><td>${t.collage||""}</td><td>${t.campus||""}</td><td>${t.dept||""}</td><td>${t.major||""}</td><td>${t.cate||""}</td>
+    tr.innerHTML = `<td>${count}</td><td>${t.curri||t.course||""}</td><td>${t.collage||""}</td><td>${t.campus||""}</td><td>${t.dept||""}</td><td>${t.major||""}</td><td>${t.cate||""}</td>
       <td>${statusCell}</td>
       <td><button class="btn small" data-id="${d.id}">검토하기</button></td>`;
     tbody.appendChild(tr);
   });
   if (count === 0) {
-    tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;color:#999;">배정된 교육운영계획서 검토 목록이 없습니다.</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="9" style="text-align:center;color:#999;">배정된 교육운영계획서 검토 목록이 없습니다.</td></tr>`;
   }
   tbody.querySelectorAll("button[data-id]").forEach(btn => {
     btn.addEventListener("click", () => openReviewPanel(btn.dataset.id));
@@ -137,17 +137,35 @@ async function submitFinal(targetId) {
     collection(db, "reviewResults"), where("targetId", "==", targetId), where("reviewerId", "==", r.id)
   ));
   const opinionByItem = {};
-  resultsSnap.forEach(d => { opinionByItem[d.data().itemId] = (d.data().opinion || "").trim(); });
+  const resultByItem = {};
+  resultsSnap.forEach(d => {
+    opinionByItem[d.data().itemId] = (d.data().opinion || "").trim();
+    resultByItem[d.data().itemId] = d.data().result || "";
+  });
 
   const missing = [];
   itemsSnap.forEach(d => {
     const it = d.data();
-    if (!opinionByItem[d.id]) {
+    if (!opinionByItem[d.id] || !resultByItem[d.id]) {
       missing.push(`${it.mainNo||""}`);
     }
   });
   if (missing.length) {
-    alert(`모든 검토항목의 검토의견을 입력해야 최종제출할 수 있습니다.\n(미입력 항목: ${missing.join(", ")})\n\n"검토하기"를 눌러 먼저 저장해 주세요.`);
+    alert(`모든 검토항목의 검토결과(적합/부적합)와 검토의견을 입력해야 최종제출할 수 있습니다.\n(미입력 항목: ${missing.join(", ")})\n\n"검토하기"를 눌러 먼저 저장해 주세요.`);
+    return;
+  }
+
+  // 검토결과(적합/부적합)와 최종검토의견이 모두 입력되어야 최종제출 가능
+  const subSnap = await getDoc(doc(db, "reviewSubmissions", submissionId(targetId, r.id)));
+  const subData = subSnap.exists() ? subSnap.data() : {};
+  const finalResult = subData.finalResult || "";
+  const finalOpinion = (subData.finalOpinion || "").trim();
+  if (finalResult !== "적합" && finalResult !== "부적합") {
+    alert("검토결과(적합/부적합)가 확정되지 않았습니다.\n모든 검토항목에 결과를 선택하고 \"저장\" 버튼을 눌러 저장한 뒤 다시 시도해 주세요.");
+    return;
+  }
+  if (!finalOpinion) {
+    alert("최종검토의견을 입력하고 \"저장\" 버튼을 눌러 저장한 뒤 최종제출해 주세요.");
     return;
   }
 
@@ -162,6 +180,48 @@ function openModal() { $("reviewModal").classList.add("open"); }
 function closeModal() { $("reviewModal").classList.remove("open"); }
 $("modalCloseBtn").addEventListener("click", closeModal);
 $("reviewModal").addEventListener("click", (e) => { if (e.target.id === "reviewModal") closeModal(); });
+
+// PDF는 모달 안에 표시하지 않고 "새 창에서 보기" 링크(target=_blank)로만 별도 창에서 열린다.
+
+// 검토 모달의 가로 폭은 브라우저 기본 resize(가로) 핸들로 사용자가 직접 조절한다. 조절한 폭은 localStorage에 저장해 다음에 열 때도 유지된다.
+// PC마다 해상도가 달라 예전에 저장된 폭이 현재 화면보다 지나치게 작게 적용되는 문제를 막기 위해, 불러올 때 최소값(1200px, 화면 폭의 70%) 미만이면 무시한다.
+(function initReviewModalResize() {
+  const box = document.querySelector(".modal-box.review-modal-box");
+  if (!box) return;
+  const key = "reviewModalWidth";
+  const saved = parseInt(localStorage.getItem(key), 10);
+  const minSafeWidth = Math.min(1200, window.innerWidth * 0.7);
+  if (saved && saved >= minSafeWidth) {
+    box.style.width = saved + "px";
+  } else {
+    localStorage.removeItem(key);
+  }
+
+  if (typeof ResizeObserver !== "undefined") {
+    let saveTimer = null;
+    const ro = new ResizeObserver((entries) => {
+      if (box.classList.contains("fullscreen")) return;
+      clearTimeout(saveTimer);
+      saveTimer = setTimeout(() => {
+        localStorage.setItem(key, Math.round(entries[0].contentRect.width));
+      }, 300);
+    });
+    ro.observe(box);
+  }
+
+  // 전체화면 토글: 일부 PC에서 화면이 작게 보이는 문제를 사용자가 즉시 해결할 수 있도록 제공
+  const fsBtn = document.getElementById("modalFullscreenBtn");
+  const fsKey = "reviewModalFullscreen";
+  function applyFullscreen(on) {
+    box.classList.toggle("fullscreen", on);
+    if (fsBtn) fsBtn.textContent = on ? "⤡ 원래 크기" : "⛶ 전체화면";
+    localStorage.setItem(fsKey, on ? "1" : "0");
+  }
+  if (fsBtn) {
+    applyFullscreen(localStorage.getItem(fsKey) === "1");
+    fsBtn.addEventListener("click", () => applyFullscreen(!box.classList.contains("fullscreen")));
+  }
+})();
 
 async function openReviewPanel(targetId) {
   const r = getReviewerSession();
@@ -214,14 +274,26 @@ async function openReviewPanel(targetId) {
   const tbody2 = $("reviewItemsTablePart2").querySelector("tbody");
   tbody1.innerHTML = ""; tbody2.innerHTML = "";
 
+  // 검토문항 내 괄호 "(…)" 안 내용을 bold로 강조표시 (예: (전체 편성학점))
+  function escapeHtml(s) {
+    return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  }
+  function formatQuestion(q) {
+    const escaped = escapeHtml(q || "");
+    return escaped.replace(/\(([^()]*)\)/g, (m, inner) => `(<b>${inner}</b>)`);
+  }
+
   function renderRow(d, label) {
     const it = d.data();
     const ex = existing[d.id];
     const tr = document.createElement("tr");
     tr.dataset.itemId = d.id;
+    tr.dataset.part = it.part || "part1";
+    const opinionMax = it.part === "part2" ? 1000 : 50;
+    const opinionRows = it.part === "part2" ? 4 : 2;
     tr.innerHTML = `
       <td>${label}</td>
-      <td>${it.question}</td>
+      <td style="white-space:pre-line;text-align:left;">${formatQuestion(it.question)}</td>
       <td>
         <select class="resultSelect" ${isSubmitted ? "disabled" : ""}>
           <option value="">선택</option>
@@ -229,7 +301,7 @@ async function openReviewPanel(targetId) {
           <option value="부적합" ${ex && ex.result==="부적합" ? "selected":""}>부적합</option>
         </select>
       </td>
-      <td><textarea class="opinionInput" maxlength="50" rows="2" style="width:100%;resize:vertical;white-space:pre-wrap;word-break:break-all;" ${isSubmitted ? "disabled" : ""}>${ex ? (ex.opinion||"") : ""}</textarea></td>
+      <td><textarea class="opinionInput" maxlength="${opinionMax}" rows="${opinionRows}" style="width:100%;resize:vertical;white-space:pre-wrap;word-break:break-all;" ${isSubmitted ? "disabled" : ""}>${ex ? (ex.opinion||"") : ""}</textarea></td>
     `;
     return tr;
   }
@@ -270,7 +342,8 @@ async function openReviewPanel(targetId) {
     for (const row of trRows) {
       const itemId = row.dataset.itemId;
       const result = row.querySelector(".resultSelect").value;
-      const opinion = row.querySelector(".opinionInput").value.slice(0, 50);
+      const opinionMax = row.dataset.part === "part2" ? 1000 : 50;
+      const opinion = row.querySelector(".opinionInput").value.slice(0, opinionMax);
       if (!result && !opinion) continue;
       savedAny = true;
       const ex = existing[itemId];
@@ -283,7 +356,7 @@ async function openReviewPanel(targetId) {
       }
     }
     const finalResult = recomputeFinalResult();
-    const finalOpinion = $("finalOpinionInput").value.slice(0, 100);
+    const finalOpinion = $("finalOpinionInput").value.slice(0, 500);
     await setDoc(doc(db, "reviewSubmissions", submissionId(targetId, r.id)), {
       targetId, reviewerId: r.id,
       status: savedAny || subData.status === "draft" ? "draft" : (subData.status || "draft"),

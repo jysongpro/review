@@ -195,6 +195,7 @@ header.topbar .admin-btn:hover{background:rgba(255,255,255,.22);}
 }
 table{width:100%;border-collapse:collapse;font-size:13px;}
 th,td{border:1px solid var(--c-border);padding:9px 10px;text-align:left;}
+thead th{text-align:center;}
 th{background:var(--blue-light);color:var(--c-navy-800);font-weight:700;}
 tr:hover td{background:#fafcff;}
 
