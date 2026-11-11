@@ -5,7 +5,7 @@ import {
 import {
   ref, uploadBytes, getDownloadURL
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js";
-import { buildCourseOptions, parseExcelFile, exportToExcel, exportToExcelWithMerges, isAdminLoggedIn, setAdminLoggedIn, toast, sortAndLabelItems } from "./common.js";
+import { buildCourseOptions, parseExcelFile, exportToExcel, exportToExcelWithMerges, isAdminLoggedIn, setAdminLoggedIn, toast, sortAndLabelItems, nowStr } from "./common.js";
 
 const $ = (id) => document.getElementById(id);
 function normalizePhone(v) { return (v || "").toString().replace(/[^0-9*]/g, ""); }
@@ -706,8 +706,12 @@ $("exportResultsBtn").addEventListener("click", () => {
   exportToExcelWithMerges(aoa, merges, `${filter}_검토결과.xlsx`, colWidths);
 });
 
-// ---- 검토의견서 보기 ----
-window.__viewOpinion = async (targetId, reviewerId) => {
+// ---- 검토의견서 보기 / 수정 ----
+let _opinionCtx = { targetId: null, reviewerId: null };
+let _opinionEditMode = false;
+
+function renderOpinionModal() {
+  const { targetId, reviewerId } = _opinionCtx;
   const { targets, reviewers, items, resultsByKey } = _resultsContext;
   const t = targets[targetId] || {};
   const rev = reviewers[reviewerId] || {};
@@ -741,13 +745,28 @@ window.__viewOpinion = async (targetId, reviewerId) => {
     `<thead><tr>${reviewerCols.map(c => `<th style="background:#e6effa;color:#0f2c5c;border:1px solid #dde5f0;padding:8px;">${c[0]}</th>`).join("")}</tr></thead>
      <tbody><tr>${reviewerCols.map(c => `<td style="border:1px solid #dde5f0;padding:8px;text-align:center;">${c[1]||"-"}</td>`).join("")}</tr></tbody>`;
 
-  const finalCols = [
-    ["최종결과", sub.finalResult || "미정"],
-    ["최종검토의견", sub.finalOpinion || "-"]
-  ];
-  $("opinionFinalTable").innerHTML =
-    `<thead><tr>${finalCols.map(c => `<th style="background:#e6effa;color:#0f2c5c;border:1px solid #dde5f0;padding:8px;">${c[0]}</th>`).join("")}</tr></thead>
-     <tbody><tr>${finalCols.map(c => `<td style="border:1px solid #dde5f0;padding:8px;text-align:center;">${c[1]||"-"}</td>`).join("")}</tr></tbody>`;
+  if (_opinionEditMode) {
+    $("opinionFinalTable").innerHTML =
+      `<thead><tr><th style="background:#e6effa;color:#0f2c5c;border:1px solid #dde5f0;padding:8px;">최종결과</th><th style="background:#e6effa;color:#0f2c5c;border:1px solid #dde5f0;padding:8px;">최종검토의견</th></tr></thead>
+       <tbody><tr>
+         <td style="border:1px solid #dde5f0;padding:8px;text-align:center;">
+           <select id="opinionFinalResultInput" style="padding:4px 8px;">
+             <option value="" ${!sub.finalResult ? "selected":""}>미정</option>
+             <option value="적합" ${sub.finalResult==="적합"?"selected":""}>적합</option>
+             <option value="부적합" ${sub.finalResult==="부적합"?"selected":""}>부적합</option>
+           </select>
+         </td>
+         <td style="border:1px solid #dde5f0;padding:8px;"><textarea id="opinionFinalOpinionInput" maxlength="500" rows="3" style="width:100%;box-sizing:border-box;">${sub.finalOpinion||""}</textarea></td>
+       </tr></tbody>`;
+  } else {
+    const finalCols = [
+      ["최종결과", sub.finalResult || "미정"],
+      ["최종검토의견", sub.finalOpinion || "-"]
+    ];
+    $("opinionFinalTable").innerHTML =
+      `<thead><tr>${finalCols.map(c => `<th style="background:#e6effa;color:#0f2c5c;border:1px solid #dde5f0;padding:8px;">${c[0]}</th>`).join("")}</tr></thead>
+       <tbody><tr>${finalCols.map(c => `<td style="border:1px solid #dde5f0;padding:8px;text-align:center;">${c[1]||"-"}</td>`).join("")}</tr></tbody>`;
+  }
 
   const itemListRaw = Object.values(items).filter(it => it.course === t.course);
   const { sorted: itemList, labelMap: itemLabelMap } = sortAndLabelItems(itemListRaw);
@@ -759,18 +778,76 @@ window.__viewOpinion = async (targetId, reviewerId) => {
     const r = resultByItem[it.id];
     const tbody = it.part === "part2" ? tbody2 : tbody1;
     const tr = document.createElement("tr");
-    const badge = r && r.result ? `<span class="badge ${r.result==="적합"?"ok":"bad"}">${r.result}</span>` : "-";
-    tr.innerHTML = `<td>${itemLabelMap.get(it.id)}</td><td style="white-space:pre-line;text-align:left;">${formatQuestion(it.question)}</td><td>${badge}</td><td style="white-space:pre-line;text-align:left;">${escapeHtml(r ? (r.opinion||"") : "")}</td>`;
+    tr.dataset.itemId = it.id;
+    if (_opinionEditMode) {
+      const opinionMax = it.part === "part2" ? 1000 : 500;
+      tr.innerHTML = `<td>${itemLabelMap.get(it.id)}</td><td style="white-space:pre-line;text-align:left;">${formatQuestion(it.question)}</td>
+        <td><select class="opEditResult" style="padding:4px;">
+          <option value="" ${!r||!r.result ? "selected":""}>-</option>
+          <option value="적합" ${r && r.result==="적합" ? "selected":""}>적합</option>
+          <option value="부적합" ${r && r.result==="부적합" ? "selected":""}>부적합</option>
+        </select></td>
+        <td><textarea class="opEditOpinion" maxlength="${opinionMax}" rows="3" style="width:100%;box-sizing:border-box;resize:vertical;">${r ? (r.opinion||"") : ""}</textarea></td>`;
+    } else {
+      const badge = r && r.result ? `<span class="badge ${r.result==="적합"?"ok":"bad"}">${r.result}</span>` : "-";
+      tr.innerHTML = `<td>${itemLabelMap.get(it.id)}</td><td style="white-space:pre-line;text-align:left;">${formatQuestion(it.question)}</td><td>${badge}</td><td style="white-space:pre-line;text-align:left;">${escapeHtml(r ? (r.opinion||"") : "")}</td>`;
+    }
     tbody.appendChild(tr);
   });
   if (!tbody1.children.length) tbody1.innerHTML = `<tr><td colspan="4" style="text-align:center;color:#999;">항목 없음</td></tr>`;
   if (!tbody2.children.length) tbody2.innerHTML = `<tr><td colspan="4" style="text-align:center;color:#999;">항목 없음</td></tr>`;
 
+  $("opinionEditBtn").style.display = _opinionEditMode ? "none" : "inline-block";
+  $("opinionSaveBtn").style.display = _opinionEditMode ? "inline-block" : "none";
+}
+
+window.__viewOpinion = async (targetId, reviewerId) => {
+  _opinionCtx = { targetId, reviewerId };
+  _opinionEditMode = false;
+  renderOpinionModal();
   $("opinionModal").style.display = "flex";
 };
-$("opinionModalClose").addEventListener("click", () => { $("opinionModal").style.display = "none"; });
+$("opinionModalClose").addEventListener("click", () => { $("opinionModal").style.display = "none"; _opinionEditMode = false; });
 $("opinionPrintBtn").addEventListener("click", () => window.print());
-$("opinionModal").addEventListener("click", (e) => { if (e.target.id === "opinionModal") $("opinionModal").style.display = "none"; });
+$("opinionModal").addEventListener("click", (e) => { if (e.target.id === "opinionModal") { $("opinionModal").style.display = "none"; _opinionEditMode = false; } });
+
+$("opinionEditBtn").addEventListener("click", () => {
+  _opinionEditMode = true;
+  renderOpinionModal();
+});
+
+$("opinionSaveBtn").addEventListener("click", async () => {
+  const { targetId, reviewerId } = _opinionCtx;
+  if (!targetId || !reviewerId) return;
+  const key = `${targetId}_${reviewerId}`;
+  const resultsByKey = _resultsContext.resultsByKey[key] || [];
+  const resultByItem = {};
+  resultsByKey.forEach(r => resultByItem[r.itemId] = r);
+
+  const rows = [...$("opinionTablePart1").querySelectorAll("tbody tr[data-item-id]"), ...$("opinionTablePart2").querySelectorAll("tbody tr[data-item-id]")];
+  for (const row of rows) {
+    const itemId = row.dataset.itemId;
+    const result = row.querySelector(".opEditResult").value;
+    const opinion = row.querySelector(".opEditOpinion").value;
+    const ex = resultByItem[itemId];
+    if (ex) {
+      await updateDoc(doc(db, "reviewResults", ex.id), { result, opinion, updatedAt: nowStr() });
+    } else if (result || opinion) {
+      const t_ = _resultsContext.targets[targetId] || {};
+      await addDoc(collection(db, "reviewResults"), { targetId, reviewerId, itemId, course: t_.course, result, opinion, updatedAt: nowStr() });
+    }
+  }
+  const finalResult = $("opinionFinalResultInput").value;
+  const finalOpinion = $("opinionFinalOpinionInput").value;
+  await setDoc(doc(db, "reviewSubmissions", `${targetId}_${reviewerId}`), {
+    targetId, reviewerId, finalResult, finalOpinion, updatedAt: nowStr()
+  }, { merge: true });
+
+  await loadResults();
+  _opinionEditMode = false;
+  renderOpinionModal();
+  alert("저장되었습니다.");
+});
 
 // ---- 제출완료된 검토의견서를 다시 작성할 수 있도록 잠금 해제 ----
 window.__reopenSubmission = async (targetId, reviewerId) => {

@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>관리자 - 교육운영계획서 검토 지원도구</title>
-<link rel="stylesheet" href="css/style.css?v=1.55.0">
+<link rel="stylesheet" href="css/style.css?v=1.56.0">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
   @media print{
@@ -205,6 +205,8 @@
       <div class="modal-head" style="display:flex;align-items:center;justify-content:space-between;padding:18px 24px;border-bottom:1px solid #dde5f0;position:sticky;top:0;background:#fff;border-radius:14px 14px 0 0;">
         <h2 style="margin:0;font-size:17px;color:#0f2c5c;">검토의견서 보기</h2>
         <div class="no-print" style="display:flex;gap:8px;">
+          <button id="opinionEditBtn" class="btn small" style="border-radius:6px;padding:6px 14px;cursor:pointer;font-size:13px;">수정하기</button>
+          <button id="opinionSaveBtn" class="btn small" style="display:none;border-radius:6px;padding:6px 14px;cursor:pointer;font-size:13px;">저장</button>
           <button id="opinionPrintBtn" class="btn secondary small" style="border:1px solid #cdd8e8;background:#eef2f8;color:#0f2c5c;border-radius:6px;padding:6px 14px;cursor:pointer;font-size:13px;">인쇄하기</button>
           <button id="opinionModalClose" style="border:none;background:#eef2f8;color:#334;width:32px;height:32px;border-radius:50%;cursor:pointer;font-size:16px;">✕</button>
         </div>
@@ -255,6 +257,6 @@
   </section>
 </div>
 
-<script type="module" src="js/admin.js?v=1.55.0"></script>
+<script type="module" src="js/admin.js?v=1.56.0"></script>
 </body>
 </html>
